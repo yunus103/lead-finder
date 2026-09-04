@@ -36,13 +36,13 @@ Do not duplicate detailed information across documents.
 
 **Status:** In Progress
 
-**Current Phase:** Phase 02 — Business Management
+**Current Phase:** Phase 03 — Discovery Infrastructure
 
-**Current Step:** Step 02 — Business Management
+**Current Step:** Step 03 — Discovery Infrastructure
 
 **Next Document:**
 
-`/docs/implementation/02-business-management.md`
+`/docs/implementation/03-discovery-infrastructure.md`
 
 ---
 
@@ -206,10 +206,10 @@ V1 is complete when:
 
 # Current Next Step
 
-**Phase 02 — Business Management**
+**Phase 03 — Discovery Infrastructure**
 
-**Step 02 — Business Management**
+**Step 03 — Discovery Infrastructure**
 
 Detailed instructions:
 
-`/docs/implementation/02-business-management.md`
+`/docs/implementation/03-discovery-infrastructure.md`

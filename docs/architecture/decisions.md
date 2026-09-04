@@ -22,3 +22,19 @@ Prevents duplicate records across Google Maps, Search, and Instagram discoveries
 **Alternatives:**  
 - Provider-isolated tables: Causes fragmented records and duplicate outreach.
 - Fuzzy name matching without anchor signals: High false-positive error rate erroneously merging separate businesses.
+
+---
+
+### Pluggable Discovery Registry & Unified Query Model
+
+**Status:** Accepted  
+**Date:** 2026-09-04
+
+**Decision:**  
+All discovery providers (Google Maps, Google Search, Instagram) must implement the `IDiscoveryProvider` contract and register in `providerRegistry`. The discovery orchestrator coordinates multi-provider querying, feeds raw leads through progressive deduplication into the canonical `businesses` table, records execution metrics in `searches`, and links individual results in `search_results`.
+
+**Reason:**  
+Keeps provider implementations strictly decoupled from core business storage and CRM workflows. Adding, swapping, or upgrading a discovery provider never requires restructuring core business logic or the UI.
+
+**Alternatives:**  
+- Direct, provider-specific search controllers: Couples provider quirks directly to UI and database operations.

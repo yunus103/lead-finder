@@ -17,6 +17,12 @@ export function Navbar() {
               Panel
             </Link>
             <Link
+              href="/discover"
+              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+            >
+              Keşif Yap
+            </Link>
+            <Link
               href="/leads"
               className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-medium transition"
             >

@@ -36,13 +36,13 @@ Do not duplicate detailed information across documents.
 
 **Status:** In Progress
 
-**Current Phase:** Phase 04 — Google Maps Discovery
+**Current Phase:** Phase 05 — Website Intelligence
 
-**Current Step:** Step 04 — Google Maps Discovery
+**Current Step:** Step 05 — Website Intelligence
 
 **Next Document:**
 
-`/docs/implementation/04-google-maps-discovery.md`
+`/docs/implementation/05-website-intelligence.md`
 
 ---
 
@@ -206,10 +206,10 @@ V1 is complete when:
 
 # Current Next Step
 
-**Phase 04 — Google Maps Discovery**
+**Phase 05 — Website Intelligence**
 
-**Step 04 — Google Maps Discovery**
+**Step 05 — Website Intelligence**
 
 Detailed instructions:
 
-`/docs/implementation/04-google-maps-discovery.md`
+`/docs/implementation/05-website-intelligence.md`

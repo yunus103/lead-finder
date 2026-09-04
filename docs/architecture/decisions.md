@@ -38,3 +38,20 @@ Keeps provider implementations strictly decoupled from core business storage and
 
 **Alternatives:**  
 - Direct, provider-specific search controllers: Couples provider quirks directly to UI and database operations.
+
+---
+
+### Google Places API (New) FieldMask & Quota Optimization
+
+**Status:** Accepted  
+**Date:** 2026-09-04
+
+**Decision:**  
+Integrate the modern Google Places API (New) `places:searchText` endpoint using an explicit, minimal `X-Goog-FieldMask` containing only essential lead attributes (`places.id,displayName,formattedAddress,nationalPhoneNumber,websiteUri,rating,userRatingCount,googleMapsUri`).
+
+**Reason:**  
+Google Places API (New) prices requests based on requested fields. Excluding high-cost fields (photos, long reviews, opening hours) guarantees discovery operations stay within Google's lowest cost tier and fit comfortably within the monthly \$200 recurring free credit.
+
+**Alternatives:**  
+- Legacy Places API: Deprecated by Google and lacks granular FieldMask cost control.
+- Requesting wildcard `*` fields: Results in maximum per-request billing rate.

@@ -9,17 +9,20 @@ import {
   SearchRecord,
 } from "./types";
 import { MockDiscoveryProvider } from "./providers/mock-provider";
+import { GoogleMapsProvider } from "./providers/google-maps-provider";
 
 // Provider registry allows providers to be registered dynamically
 const providerRegistry = new Map<DiscoveryProvider, IDiscoveryProvider>();
 
-// Register default/mock providers for initial infrastructure
+// Register default/active providers
 export function registerProvider(provider: IDiscoveryProvider) {
   providerRegistry.set(provider.name, provider);
 }
 
-// Pre-register mocks for Phase 03 testing
-registerProvider(new MockDiscoveryProvider("google_maps"));
+// Register live Google Maps provider
+registerProvider(new GoogleMapsProvider());
+
+// Mocks for future phases (Phase 09 Search, Phase 10 Instagram)
 registerProvider(new MockDiscoveryProvider("google_search"));
 registerProvider(new MockDiscoveryProvider("instagram"));
 registerProvider(new MockDiscoveryProvider("manual"));

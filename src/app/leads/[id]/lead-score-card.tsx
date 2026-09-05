@@ -63,37 +63,35 @@ export function LeadScoreCard({ business }: LeadScoreCardProps) {
   const style = getPriorityStyle(priority);
 
   return (
-    <div className="border border-slate-200 bg-white rounded-xl p-6 mb-6 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
-        <div className="flex items-center gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900 tracking-wide uppercase">
-              Aday Öncelik Skoru (Lead Score)
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Deterministik satış uygunluğu ve arama önceliği değerlendirmesi (0–100)
-            </p>
-          </div>
+    <div className="border border-slate-200/90 bg-white rounded-2xl p-6 sm:p-7 mb-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
+        <div>
+          <h2 className="text-base font-bold text-slate-950 tracking-tight">
+            Aday Öncelik Skoru (Lead Score)
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Deterministik satış uygunluğu ve arama önceliği değerlendirmesi (0–100)
+          </p>
         </div>
 
         <button
           onClick={handleRecalculate}
           disabled={isPending}
-          className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5 self-start sm:self-auto"
+          className="h-10 px-4 bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 hover:text-slate-950 text-xs font-bold rounded-xl transition shadow-xs disabled:opacity-50 inline-flex items-center gap-2 self-start sm:self-auto"
         >
           {isPending ? (
             <>
-              <span className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+              <span className="inline-block w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
               Hesaplanıyor...
             </>
           ) : (
-            "Puanı Yeniden Hesapla"
+            "⚡ Puanı Yeniden Hesapla"
           )}
         </button>
       </div>
 
       {feedback && (
-        <div className="mb-4 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
+        <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
           {feedback}
         </div>
       )}
@@ -101,7 +99,7 @@ export function LeadScoreCard({ business }: LeadScoreCardProps) {
       {/* Main Score Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
         {/* Score & Gauge */}
-        <div className="flex items-center gap-4 bg-slate-50/80 border border-slate-200 rounded-xl p-4">
+        <div className="flex items-center gap-4 bg-slate-50/50 border border-slate-200/80 rounded-xl p-5">
           <div className="text-center">
             <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
               {score}

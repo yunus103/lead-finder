@@ -211,44 +211,44 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
   const statusCfg = CRM_STATUS_CONFIG[crmStatus] || CRM_STATUS_CONFIG.NEW;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 mb-6 shadow-sm">
+    <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 mb-6 shadow-xs">
       {/* 1. Top Call Header & Quick Communication Tools */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-200 pb-5 mb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
         <div className="flex items-center gap-4">
-          <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-center">
-            <span className="text-2xl">📞</span>
+          <div className="bg-slate-950 text-white p-3.5 rounded-2xl flex items-center justify-center shadow-xs">
+            <span className="text-xl">📞</span>
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 Hızlı Arama Hattı
               </span>
               {copiedPhone && (
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-medium">
-                  Kopyalandı!
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-bold">
+                  ✓ Kopyalandı
                 </span>
               )}
             </div>
-            <div className="text-xl font-bold font-mono text-slate-900 tracking-tight">
+            <div className="text-2xl font-extrabold font-mono text-slate-950 tracking-tight mt-0.5">
               {rawPhone || "Telefon Numarası Yok"}
             </div>
           </div>
         </div>
 
         {/* Call & WhatsApp Trigger Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           {rawPhone && (
             <>
               <a
                 href={`tel:${normalizedPhone}`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition"
+                className="h-10 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5"
               >
                 <span>Hemen Ara</span>
               </a>
               <button
                 type="button"
                 onClick={copyPhone}
-                className="px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition"
+                className="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
               >
                 Kopyala
               </button>
@@ -256,7 +256,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
                 href={`https://wa.me/${waPhone}?text=${encodeURIComponent(generateWhatsAppMessage())}`}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold shadow-sm transition"
+                className="h-10 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5"
                 title="Tek tıkla hazır Türkçe satış mesajını WhatsApp ile açar"
               >
                 <span>💬 WhatsApp Teklifi</span>
@@ -268,7 +268,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
           <button
             type="button"
             onClick={handleNextLead}
-            className="inline-flex items-center gap-1 px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition ml-auto"
+            className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5 ml-auto"
             title="Aramayı tamamla veya atla, sıradaki en yüksek puanlı adaya geç"
           >
             <span>Sıradakine Geç →</span>
@@ -278,23 +278,23 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
 
       {/* 2. 1-Click Call Outcome Bar */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2.5">
-          <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             Arama Sonucu Kaydet (1-Tık)
           </span>
           {statusMessage && (
-            <span className="text-xs text-emerald-600 font-medium animate-pulse">
-              {statusMessage}
+            <span className="text-xs text-emerald-600 font-bold animate-pulse">
+              ✓ {statusMessage}
             </span>
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <button
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("no_answer", "Cevap vermedi / meşgul.")}
-            className="flex flex-col items-center justify-center p-2.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-medium transition active:scale-95 disabled:opacity-50"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold transition active:scale-95 disabled:opacity-50"
           >
             <span className="text-base mb-0.5">📵</span>
             <span>Cevap Yok</span>
@@ -304,10 +304,10 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
             type="button"
             disabled={isLoggingCall}
             onClick={() => setShowFollowUpBox(!showFollowUpBox)}
-            className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-xs font-medium transition active:scale-95 ${
+            className={`h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 ${
               showFollowUpBox
-                ? "border-amber-400 bg-amber-50 text-amber-900 font-semibold"
-                : "border-amber-200 bg-amber-50/50 hover:bg-amber-100 text-amber-800"
+                ? "border-amber-400 bg-amber-100 text-amber-900 shadow-xs"
+                : "border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-800"
             }`}
           >
             <span className="text-base mb-0.5">⏰</span>
@@ -318,7 +318,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("interested", "Görüşme olumlu, detaylı bilgi talep edildi.")}
-            className="flex flex-col items-center justify-center p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100 text-emerald-800 text-xs font-medium transition active:scale-95"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-800 text-xs font-bold transition active:scale-95"
           >
             <span className="text-base mb-0.5">🔥</span>
             <span>İlgilendi</span>
@@ -328,7 +328,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("meeting", "Toplantı veya teklif sunumu ayarlandı.")}
-            className="flex flex-col items-center justify-center p-2.5 rounded-lg border border-purple-200 bg-purple-50/60 hover:bg-purple-100 text-purple-800 text-xs font-medium transition active:scale-95"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-purple-800 text-xs font-bold transition active:scale-95"
           >
             <span className="text-base mb-0.5">🤝</span>
             <span>Toplantı</span>
@@ -338,7 +338,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("rejected", "İlgilenmediğini belirtti / web sitesi istemiyor.")}
-            className="flex flex-col items-center justify-center p-2.5 rounded-lg border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-800 text-xs font-medium transition active:scale-95"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-800 text-xs font-bold transition active:scale-95"
           >
             <span className="text-base mb-0.5">❌</span>
             <span>Olumsuz / Red</span>
@@ -347,9 +347,9 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
           <button
             type="button"
             onClick={() => setShowExcludeBox(!showExcludeBox)}
-            className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-xs font-medium transition active:scale-95 ${
+            className={`h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 ${
               isExcluded
-                ? "border-slate-400 bg-slate-200 text-slate-800 font-semibold"
+                ? "border-slate-400 bg-slate-200 text-slate-800 shadow-xs"
                 : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
             }`}
           >
@@ -360,29 +360,29 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
 
         {/* Expandable Follow-Up Quick Preset Box */}
         {showFollowUpBox && (
-          <div className="mt-3 p-3.5 bg-amber-50/80 border border-amber-200 rounded-lg text-xs space-y-2.5 animate-in fade-in duration-200">
-            <div className="font-semibold text-amber-900">
+          <div className="mt-3.5 p-4 bg-amber-50/90 border border-amber-200 rounded-xl text-xs space-y-3 animate-in fade-in duration-200">
+            <div className="font-bold text-amber-950">
               Ne zaman geri aranacak? (Tek tıkla planla):
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickFollowUp("2h")}
-                className="px-3 py-1.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-medium transition"
+                className="px-3.5 py-2 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold transition shadow-2xs"
               >
                 +2 Saat Sonra
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFollowUp("tomorrow")}
-                className="px-3 py-1.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-medium transition"
+                className="px-3.5 py-2 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold transition shadow-2xs"
               >
                 Yarın Sabah (10:00)
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFollowUp("monday")}
-                className="px-3 py-1.5 rounded-md bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-medium transition"
+                className="px-3.5 py-2 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-bold transition shadow-2xs"
               >
                 Pazartesi (10:00)
               </button>
@@ -391,12 +391,12 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
                   type="datetime-local"
                   value={customDate}
                   onChange={(e) => setCustomDate(e.target.value)}
-                  className="px-2 py-1 border border-slate-300 rounded text-[11px] bg-white"
+                  className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:border-amber-500"
                 />
                 <button
                   type="button"
                   onClick={handleCustomFollowUp}
-                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-semibold"
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shadow-2xs"
                 >
                   Kaydet
                 </button>
@@ -407,8 +407,8 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
 
         {/* Expandable Exclude Reason Box */}
         {showExcludeBox && (
-          <div className="mt-3 p-3.5 bg-slate-100 border border-slate-300 rounded-lg text-xs space-y-2 animate-in fade-in duration-200">
-            <div className="font-semibold text-slate-800">
+          <div className="mt-3.5 p-4 bg-slate-100 border border-slate-300/80 rounded-xl text-xs space-y-2.5 animate-in fade-in duration-200">
+            <div className="font-bold text-slate-800">
               {isExcluded
                 ? `Bu işletme dışlanmış durumda (${exclusionReason || "Belirtilmemiş"}).`
                 : "Bu işletmeyi neden dışlıyorsunuz?"}
@@ -420,7 +420,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
                     key={r.value}
                     type="button"
                     onClick={() => handleExclusion(r.value)}
-                    className="px-2.5 py-1 rounded bg-white border border-slate-300 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition"
+                    className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-200 text-slate-800 text-xs font-medium transition"
                   >
                     {r.label}
                   </button>
@@ -430,7 +430,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
               <button
                 type="button"
                 onClick={handleRestoreExclusion}
-                className="px-3 py-1 rounded bg-slate-900 text-white hover:bg-slate-800 text-[11px] font-semibold"
+                className="px-4 py-2 rounded-xl bg-slate-950 text-white hover:bg-slate-800 text-xs font-bold shadow-xs transition"
               >
                 Dışlamayı Kaldır (Aktif Listeye Al)
               </button>
@@ -440,13 +440,13 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
       </div>
 
       {/* 3. CRM Metrics & Status Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-y border-slate-200 py-3 mb-6 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border-y border-slate-100 py-4 mb-6 text-xs">
         <div>
-          <span className="text-slate-500 block text-[11px]">CRM Durumu:</span>
+          <span className="text-slate-400 block text-[11px] font-medium">CRM Durumu:</span>
           <select
             value={crmStatus}
             onChange={(e) => handleStatusChange(e.target.value as CrmStatus)}
-            className={`mt-1 font-semibold text-xs rounded border px-2 py-1 cursor-pointer ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
+            className={`mt-1.5 font-bold text-xs rounded-lg border px-2.5 py-1.5 cursor-pointer ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
           >
             {Object.entries(CRM_STATUS_CONFIG).map(([key, val]) => (
               <option key={key} value={key}>
@@ -457,23 +457,23 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
         </div>
 
         <div>
-          <span className="text-slate-500 block text-[11px]">Arama Denemesi:</span>
-          <span className="text-slate-900 font-bold text-sm">{contactAttempts} kez arandı</span>
+          <span className="text-slate-400 block text-[11px] font-medium">Arama Denemesi:</span>
+          <span className="text-slate-950 font-mono font-bold text-sm block mt-1.5">{contactAttempts} kez arandı</span>
         </div>
 
         <div>
-          <span className="text-slate-500 block text-[11px]">Son Temas:</span>
-          <span className="text-slate-700 font-medium">
+          <span className="text-slate-400 block text-[11px] font-medium">Son Temas:</span>
+          <span className="text-slate-700 font-medium block mt-1.5">
             {lastContactedAt ? new Date(lastContactedAt).toLocaleString("tr-TR") : "Henüz Aranmadı"}
           </span>
         </div>
 
         <div>
-          <span className="text-slate-500 block text-[11px]">Sonraki Takip:</span>
-          <span className="text-slate-700 font-medium">
+          <span className="text-slate-400 block text-[11px] font-medium">Sonraki Takip:</span>
+          <span className="font-medium block mt-1.5">
             {nextFollowUpAt ? (
-              <span className="text-amber-700 font-semibold">
-                {new Date(nextFollowUpAt).toLocaleString("tr-TR")}
+              <span className="text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                ⏰ {new Date(nextFollowUpAt).toLocaleString("tr-TR")}
               </span>
             ) : (
               "—"
@@ -486,23 +486,23 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Notes Editor */}
         <div>
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
             Hızlı Satış Notu Ekle
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <textarea
               rows={3}
               value={noteInput}
               onChange={(e) => setNoteInput(e.target.value)}
               placeholder="Görüşme notu, teklif detayı, itiraz veya sekreter bilgisi..."
-              className="w-full text-xs p-3 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition"
+              className="w-full text-xs p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-blue-500 transition"
             />
             <div className="flex justify-end">
               <button
                 type="button"
                 disabled={isSavingNote || !noteInput.trim()}
                 onClick={handleSaveNote}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition disabled:opacity-50"
+                className="h-9 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold transition shadow-xs disabled:opacity-50"
               >
                 {isSavingNote ? "Kaydediliyor..." : "Notu Kaydet"}
               </button>
@@ -512,11 +512,11 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
 
         {/* Activity Timeline Stream */}
         <div>
-          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
             Aktivite Geçmişi ({activities.length})
           </h3>
           {activities.length === 0 ? (
-            <div className="bg-slate-50 rounded-lg p-4 text-slate-400 text-xs border border-slate-100">
+            <div className="bg-slate-50 rounded-xl p-6 text-slate-400 text-xs border border-slate-100 text-center">
               Henüz kaydedilmiş arama veya aktivite bulunmuyor.
             </div>
           ) : (
@@ -524,7 +524,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
               {activities.map((act) => (
                 <div
                   key={act.id}
-                  className="bg-slate-50/80 border border-slate-200 rounded-lg p-2.5 text-xs flex items-start gap-2.5"
+                  className="bg-white border border-slate-200/80 rounded-xl p-3 text-xs flex items-start gap-3 shadow-2xs"
                 >
                   <span className="text-sm mt-0.5">
                     {act.type === "call"
@@ -536,10 +536,10 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
                       : "🔄"}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-slate-800 font-medium leading-relaxed">
+                    <div className="text-slate-900 font-medium leading-relaxed">
                       {act.content}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-1">
+                    <div className="text-[10px] text-slate-400 font-mono mt-1">
                       {new Date(act.created_at).toLocaleString("tr-TR")}
                     </div>
                   </div>

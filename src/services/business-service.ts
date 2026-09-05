@@ -274,6 +274,9 @@ export async function getBusinesses(options?: {
   category?: string;
   websiteStatus?: string;
   priority?: string;
+  crmStatus?: string;
+  isExcluded?: boolean;
+  followUpDue?: boolean;
   sortBy?: "score" | "newest";
   limit?: number;
   offset?: number;
@@ -289,6 +292,29 @@ export async function getBusinesses(options?: {
     query = query
       .order("lead_score", { ascending: false })
       .order("created_at", { ascending: false });
+  }
+
+  // Exclusion filter: by default, show only active non-excluded leads
+  if (options?.isExcluded !== undefined) {
+    query = query.eq("is_excluded", options.isExcluded);
+  } else {
+    query = query.eq("is_excluded", false);
+  }
+
+  if (options?.crmStatus) {
+    if (options.crmStatus === "TO_CALL_OR_NEW") {
+      query = query.in("crm_status", ["NEW", "TO_CALL", "QUALIFIED"]);
+    } else if (options.crmStatus === "OPPORTUNITY") {
+      query = query.in("crm_status", ["INTERESTED", "MEETING", "PROPOSAL"]);
+    } else {
+      query = query.eq("crm_status", options.crmStatus);
+    }
+  }
+
+  if (options?.followUpDue) {
+    query = query
+      .not("next_follow_up_at", "is", null)
+      .lte("next_follow_up_at", new Date().toISOString());
   }
 
   if (options?.search) {

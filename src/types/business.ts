@@ -21,6 +21,11 @@ export interface Business {
   lead_score: number;
   priority: string;
   is_excluded: boolean;
+  exclusion_reason?: string | null;
+  contact_attempts?: number;
+  last_contacted_at?: string | null;
+  next_follow_up_at?: string | null;
+  notes?: string | null;
   score_reasons?: import("./scoring").ScoreReason[];
   last_scanned_at?: string | null;
   created_at: string;

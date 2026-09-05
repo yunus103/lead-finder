@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBusinessWithSources } from "@/services/business-service";
 import { getLatestWebsiteAudit, performDeepAudit } from "@/services/website-service";
+import { getLeadActivities } from "@/services/crm-service";
 import { WebsiteIntelligenceCard } from "./website-intelligence-card";
 import { LeadScoreCard } from "./lead-score-card";
+import { CrmCockpit } from "./crm-cockpit";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
 
   const { business: b, sources } = data;
   let latestAudit = await getLatestWebsiteAudit(b.id);
+  const activities = await getLeadActivities(b.id);
 
   // If business has a website but no deep audit yet, perform it on-demand
   if (!latestAudit && b.website && b.website.trim() !== "") {
@@ -158,6 +161,9 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {/* CRM & Cold-Calling Cockpit */}
+      <CrmCockpit business={b} initialActivities={activities} />
 
       {/* Lead Scoring */}
       <LeadScoreCard business={b} />

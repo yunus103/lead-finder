@@ -3,6 +3,8 @@ import { getBusinesses } from "@/services/business-service";
 import { NewLeadDialog } from "./new-lead-dialog";
 import { RecalculateAllButton } from "./recalculate-all-button";
 
+import { CRM_STATUS_CONFIG, CrmStatus } from "@/types/crm";
+
 export const dynamic = "force-dynamic";
 
 interface LeadsPageProps {
@@ -11,6 +13,7 @@ interface LeadsPageProps {
     category?: string;
     websiteStatus?: string;
     priority?: string;
+    crmTab?: string;
     sortBy?: "score" | "newest";
   }>;
 }
@@ -21,6 +24,9 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   let total = 0;
   let loadError: string | null = null;
 
+  const activeCrmTab = params.crmTab || "all";
+  const isExcludedTab = activeCrmTab === "excluded";
+
   try {
     const res = await getBusinesses({
       search: params.search,
@@ -28,6 +34,14 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       websiteStatus: params.websiteStatus,
       priority: params.priority,
       sortBy: params.sortBy || "score",
+      isExcluded: isExcludedTab ? true : false,
+      crmStatus:
+        activeCrmTab === "to_call"
+          ? "TO_CALL_OR_NEW"
+          : activeCrmTab === "opportunities"
+          ? "OPPORTUNITY"
+          : undefined,
+      followUpDue: activeCrmTab === "follow_ups" ? true : undefined,
     });
     businesses = res.businesses;
     total = res.total;
@@ -35,8 +49,16 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     loadError = err instanceof Error ? err.message : String(err);
   }
 
+  const crmTabs = [
+    { label: "📋 Tüm Aktifler", value: "all" },
+    { label: "📞 Aranacaklar", value: "to_call" },
+    { label: "⏰ Geri Aranacaklar", value: "follow_ups" },
+    { label: "🔥 Sıcak Fırsatlar", value: "opportunities" },
+    { label: "🚫 Dışlananlar", value: "excluded" },
+  ];
+
   const priorityTabs = [
-    { label: "Tümü", value: "" },
+    { label: "Tüm Skorlar", value: "" },
     { label: "🔥 HOT (80–100)", value: "HOT" },
     { label: "⚡ WARM (60–79)", value: "WARM" },
     { label: "❄️ COLD (40–59)", value: "COLD" },
@@ -171,20 +193,48 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           </div>
         </div>
 
+        {/* Operational CRM Workflow Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2">
+          {crmTabs.map((tab) => {
+            const isActive = activeCrmTab === tab.value;
+            const queryParams = new URLSearchParams();
+            if (params.search) queryParams.set("search", params.search);
+            if (params.sortBy) queryParams.set("sortBy", params.sortBy);
+            if (params.priority) queryParams.set("priority", params.priority);
+            if (tab.value !== "all") queryParams.set("crmTab", tab.value);
+
+            return (
+              <Link
+                key={tab.value}
+                href={`/leads${queryParams.toString() ? `?${queryParams.toString()}` : ""}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                  isActive
+                    ? "bg-emerald-700 text-white shadow-xs"
+                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
+        </div>
+
         {/* Priority Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] text-slate-400 mr-1">Öncelik:</span>
           {priorityTabs.map((tab) => {
             const isActive = (params.priority || "") === tab.value;
             const queryParams = new URLSearchParams();
             if (params.search) queryParams.set("search", params.search);
             if (params.sortBy) queryParams.set("sortBy", params.sortBy);
+            if (activeCrmTab !== "all") queryParams.set("crmTab", activeCrmTab);
             if (tab.value) queryParams.set("priority", tab.value);
 
             return (
               <Link
                 key={tab.value}
                 href={`/leads${queryParams.toString() ? `?${queryParams.toString()}` : ""}`}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
                   isActive
                     ? "bg-slate-900 text-white shadow-xs"
                     : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -215,87 +265,142 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
               <thead className="bg-slate-50 text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Öncelik & Skor</th>
+                  <th className="px-4 py-3 font-semibold">CRM Durumu</th>
                   <th className="px-4 py-3 font-semibold">İşletme</th>
-                  <th className="px-4 py-3 font-semibold">Konum</th>
-                  <th className="px-4 py-3 font-semibold">İletişim</th>
-                  <th className="px-4 py-3 font-semibold">Web Sitesi</th>
+                  <th className="px-4 py-3 font-semibold">İletişim & Arama</th>
+                  <th className="px-4 py-3 font-semibold">Web Durumu</th>
                   <th className="px-4 py-3 font-semibold">Google Puan</th>
                   <th className="px-4 py-3 font-semibold text-right">İşlem</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {businesses.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50/80 transition">
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                      {getPriorityBadge(b.priority, b.lead_score)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <div className="font-semibold text-slate-900">{b.name}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        {b.category || "Kategori Belirtilmemiş"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-700">
-                      <div>{b.city || "—"}</div>
-                      <div className="text-[11px] text-slate-400">{b.district || ""}</div>
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-700">
-                      <div>{b.phone || "—"}</div>
-                      {b.instagram && (
-                        <div className="text-[11px] text-pink-600 mt-0.5 font-medium">
-                          @{b.instagram_normalized || b.instagram}
+                {businesses.map((b) => {
+                  const statusCfg = CRM_STATUS_CONFIG[b.crm_status as CrmStatus] || CRM_STATUS_CONFIG.NEW;
+                  const isFollowUpDue = b.next_follow_up_at && new Date(b.next_follow_up_at) <= new Date();
+
+                  return (
+                    <tr key={b.id} className="hover:bg-slate-50/80 transition">
+                      {/* 1. Score & Priority */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {getPriorityBadge(b.priority, b.lead_score)}
+                      </td>
+
+                      {/* 2. CRM Status & Follow-Up Alert */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}></span>
+                            {statusCfg.label}
+                          </span>
+
+                          {b.is_excluded && (
+                            <span className="text-[9px] font-semibold bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded">
+                              🚫 Dışlandı
+                            </span>
+                          )}
+
+                          {b.next_follow_up_at && (
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                isFollowUpDue
+                                  ? "bg-amber-100 text-amber-900 font-bold border border-amber-300 animate-pulse"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                              title={new Date(b.next_follow_up_at).toLocaleString("tr-TR")}
+                            >
+                              ⏰ {isFollowUpDue ? "Takip Vakti!" : new Date(b.next_follow_up_at).toLocaleDateString("tr-TR")}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
-                          b.website_status === "HAS_WEBSITE"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : b.website_status === "NO_WEBSITE"
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
-                            : b.website_status === "UNREACHABLE"
-                            ? "bg-amber-50 text-amber-700 border-amber-200"
-                            : "bg-slate-100 text-slate-600 border-slate-200"
-                        }`}
-                      >
-                        {b.website_status === "HAS_WEBSITE"
-                          ? "SİTE VAR"
-                          : b.website_status === "NO_WEBSITE"
-                          ? "SİTE YOK"
-                          : b.website_status === "UNREACHABLE"
-                          ? "ERİŞİLEMEZ"
-                          : "BİLİNMİYOR"}
-                      </span>
-                      {b.website_domain && (
-                        <div className="text-[11px] text-slate-500 mt-1 truncate max-w-[150px]">
-                          {b.website_domain}
+                      </td>
+
+                      {/* 3. Business Name & Location */}
+                      <td className="px-4 py-3.5">
+                        <div className="font-semibold text-slate-900">{b.name}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {b.category || "Kategori Belirtilmemiş"}
                         </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-700">
-                      {b.rating ? (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-amber-500 font-bold">★</span>
-                          <span className="font-semibold text-slate-800">{b.rating}</span>
-                          <span className="text-slate-400 text-[10px]">
-                            ({b.review_count || 0})
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          {b.city || "—"} {b.district ? `(${b.district})` : ""}
+                        </div>
+                      </td>
+
+                      {/* 4. Contact & Call Tracking */}
+                      <td className="px-4 py-3.5 text-slate-700">
+                        <div className="font-mono font-medium">{b.phone || "—"}</div>
+                        <div className="flex items-center gap-2 mt-1 text-[10px]">
+                          <span
+                            className={`px-1.5 py-0.2 rounded font-medium ${
+                              (b.contact_attempts || 0) > 0
+                                ? "bg-slate-100 text-slate-700"
+                                : "bg-emerald-50 text-emerald-700 font-semibold"
+                            }`}
+                          >
+                            {(b.contact_attempts || 0) > 0
+                              ? `${b.contact_attempts} arama`
+                              : "Hiç aranmadı"}
                           </span>
                         </div>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      <Link
-                        href={`/leads/${b.id}`}
-                        className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
-                      >
-                        İncele →
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      {/* 5. Website Status */}
+                      <td className="px-4 py-3.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${
+                            b.website_status === "HAS_WEBSITE"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : b.website_status === "NO_WEBSITE"
+                              ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : b.website_status === "UNREACHABLE"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {b.website_status === "HAS_WEBSITE"
+                            ? "SİTE VAR"
+                            : b.website_status === "NO_WEBSITE"
+                            ? "SİTE YOK"
+                            : b.website_status === "UNREACHABLE"
+                            ? "ERİŞİLEMEZ"
+                            : "BİLİNMİYOR"}
+                        </span>
+                        {b.website_domain && (
+                          <div className="text-[11px] text-slate-500 mt-1 truncate max-w-[150px]">
+                            {b.website_domain}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* 6. Google Rating */}
+                      <td className="px-4 py-3.5 text-slate-700">
+                        {b.rating ? (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-amber-500 font-bold">★</span>
+                            <span className="font-semibold text-slate-800">{b.rating}</span>
+                            <span className="text-slate-400 text-[10px]">
+                              ({b.review_count || 0})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      {/* 7. Action */}
+                      <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                        <Link
+                          href={`/leads/${b.id}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition"
+                        >
+                          <span>Kokpiti Aç</span>
+                          <span>→</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

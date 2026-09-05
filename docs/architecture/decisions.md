@@ -106,3 +106,20 @@ Prevents database bloat from franchise chains, government facilities, or non-via
 **Alternatives:**  
 - Auto-saving all discovery leads directly to the database: Causes CRM pollution with hundreds of irrelevant entities.
 - Running deep live HTTP audits sequentially during batch saving: Blocks the UI for 20–30 seconds.
+
+---
+
+### High-Velocity Cold-Calling Cockpit & Lean CRM Data Model
+
+**Status:** Accepted  
+**Date:** 2026-09-05
+
+**Decision:**  
+Structure the CRM around a single-operator cold-calling cockpit rather than a multi-tier SaaS CRM. Replace multi-table relational list management (`lead_lists` + `lead_list_members`) with direct operational status filters and indexed query dimensions. Automate status transitions through 1-click call outcome triggers (`Cevap Yok`, `Geri Ara`, `İlgilendi`, `Toplantı`, `Red`, `Dışla`) that update `businesses.crm_status`, increment `contact_attempts`, timestamp `last_contacted_at`, and record an event in `lead_activities`. Integrate rapid follow-up scheduling presets (`+2h`, `Yarın 10:00`, `Pazartesi 10:00`), 1-click tailored WhatsApp pitch launching, and a "Save & Next Lead" continuous dialer mechanic.
+
+**Reason:**  
+For solo cold-calling, manual 10-status dropdowns, modal navigation, and complex list management introduce excessive friction that degrades call velocity. Automating status transitions and persisting interactions in a single `lead_activities` table maintains chronological audit history without operational overhead.
+
+**Alternatives:**  
+- Full relational list architecture: Adds unnecessary join tables and CRUD interfaces that don't add value for a solo operator.
+- Manual dropdown-driven status management: Requires 3-4 clicks per call attempt, slowing down high-volume calling sessions.

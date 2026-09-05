@@ -36,13 +36,13 @@ Do not duplicate detailed information across documents.
 
 **Status:** In Progress
  
-**Current Phase:** Phase 07 — CRM
+**Current Phase:** Phase 08 — Calling Queue
  
-**Current Step:** Step 07 — CRM
+**Current Step:** Step 08 — Calling Queue
  
 **Next Document:**
  
-`/docs/implementation/07-crm.md`
+`/docs/implementation/08-calling-queue.md`
 
 ---
 

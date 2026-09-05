@@ -100,4 +100,80 @@ export async function recalculateAllScoresAction() {
   }
 }
 
+export async function logCallAction(params: {
+  businessId: string;
+  outcome: import("@/types/crm").CallOutcome;
+  notes?: string | null;
+  followUpDate?: string | null;
+  customStatus?: import("@/types/crm").CrmStatus;
+}) {
+  try {
+    const { logCallInteraction } = await import("@/services/crm-service");
+    const res = await logCallInteraction(params);
+    revalidatePath(`/leads/${params.businessId}`);
+    revalidatePath("/leads");
+    return res;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, nextStatus: "NEW" as const, error: message };
+  }
+}
+
+export async function updateLeadStatusAction(
+  businessId: string,
+  status: import("@/types/crm").CrmStatus
+) {
+  try {
+    const { updateLeadStatus } = await import("@/services/crm-service");
+    const res = await updateLeadStatus(businessId, status);
+    revalidatePath(`/leads/${businessId}`);
+    revalidatePath("/leads");
+    return res;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export async function setLeadExclusionAction(
+  businessId: string,
+  isExcluded: boolean,
+  reason?: string | null
+) {
+  try {
+    const { setLeadExclusion } = await import("@/services/crm-service");
+    const res = await setLeadExclusion(businessId, isExcluded, reason);
+    revalidatePath(`/leads/${businessId}`);
+    revalidatePath("/leads");
+    return res;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export async function saveLeadNoteAction(businessId: string, noteText: string) {
+  try {
+    const { saveLeadNote } = await import("@/services/crm-service");
+    const res = await saveLeadNote(businessId, noteText);
+    revalidatePath(`/leads/${businessId}`);
+    return res;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export async function getNextLeadAction(currentLeadId: string) {
+  try {
+    const { getNextLeadId } = await import("@/services/crm-service");
+    const nextId = await getNextLeadId(currentLeadId);
+    return { success: true, nextId };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message, nextId: null };
+  }
+}
+
+
 

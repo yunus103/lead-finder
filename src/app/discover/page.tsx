@@ -12,14 +12,21 @@ export default async function DiscoverPage() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="border-b border-slate-200 pb-6 mb-6">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Potansiyel Müşteri Keşfi
-        </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Google Haritalar üzerinden yüksek potansiyelli yerel işletmeleri keşfedin ve arama sırasına aktarın.
-        </p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Yaytech Lead Engine
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+            Potansiyel Müşteri Keşfi & Tarama
+          </h1>
+          <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+            Google Haritalar üzerinden lokasyon ve sektöre göre yüksek potansiyelli yerel işletmeleri tara, eksikleri anında denetle ve öncelikli arama sırasına aktar.
+          </p>
+        </div>
       </div>
 
       <DiscoveryClient initialHistory={history} />

@@ -235,18 +235,23 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
   return (
     <div className="space-y-8">
       {/* Discovery Query Form */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <div className="border-b border-slate-200 pb-4 mb-6">
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">Yeni Keşif Başlat</h2>
-          <p className="text-xs text-slate-500 mt-1">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs">
+        <div className="border-b border-slate-100 pb-5 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+              ● Harita & Web Motoru
+            </span>
+          </div>
+          <h2 className="text-xl font-extrabold text-slate-950 tracking-tight">Yeni Keşif Başlat</h2>
+          <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
             Konum ve sektör seçerek işletmeleri bulun, anında skorlayın ve sadece istediğiniz işletmeleri listenize kaydedin.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 mb-2">
                 Şehir / İl *
               </label>
               <select
@@ -254,7 +259,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 required
                 value={selectedCity}
                 onChange={(e) => handleCityChange(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
               >
                 {TURKISH_CITIES.map((city) => (
                   <option key={city} value={city}>
@@ -265,14 +270,14 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 mb-2">
                 İlçe (İsteğe bağlı)
               </label>
               <select
                 name="district"
                 value={selectedDistrict}
                 onChange={(e) => setSelectedDistrict(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
               >
                 <option value="">Tümü / Belirtilmemiş</option>
                 {availableDistricts.map((dist) => (
@@ -284,13 +289,13 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-800 mb-2">
                 Sektör / Kategori *
               </label>
               <select
                 value={selectedPresetId}
                 onChange={(e) => setSelectedPresetId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
               >
                 {SECTOR_PRESETS.map((group) => (
                   <optgroup key={group.groupName} label={group.groupName}>
@@ -312,7 +317,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                   value={customSector}
                   onChange={(e) => setCustomSector(e.target.value)}
                   placeholder="Örn: Butik Otel, Dövme Stüdyosu..."
-                  className="w-full mt-2 bg-white border border-emerald-500 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full mt-2 bg-white border border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
                 />
               )}
             </div>
@@ -320,48 +325,48 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2">
+              <label className="block text-xs font-bold text-slate-800 mb-2">
                 Sorgulanacak Kaynaklar
               </label>
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-300 px-3 py-2 rounded-lg text-xs text-slate-800 cursor-pointer hover:bg-slate-100">
+              <div className="flex flex-wrap gap-3">
+                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition">
                   <input
                     type="checkbox"
                     name="source_maps"
                     defaultChecked
-                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
                   />
-                  <span className="font-medium">Google Haritalar</span>
+                  <span className="font-semibold">Google Haritalar</span>
                 </label>
-                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-300 px-3 py-2 rounded-lg text-xs text-slate-800 cursor-pointer hover:bg-slate-100">
+                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition">
                   <input
                     type="checkbox"
                     name="source_search"
                     defaultChecked
-                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
                   />
-                  <span className="font-medium">Google Arama</span>
+                  <span className="font-semibold">Google Arama</span>
                 </label>
-                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-300 px-3 py-2 rounded-lg text-xs text-slate-800 cursor-pointer hover:bg-slate-100">
+                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition">
                   <input
                     type="checkbox"
                     name="source_instagram"
                     defaultChecked
-                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
                   />
-                  <span className="font-medium">Instagram</span>
+                  <span className="font-semibold">Instagram</span>
                 </label>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-2">
+              <label className="block text-xs font-bold text-slate-800 mb-2">
                 Hedef İşletme Sayısı (Google Maps Sayfalama)
               </label>
               <select
                 name="limit"
                 defaultValue="20"
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-emerald-500 focus:bg-white"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
               >
                 <option value="20">20 İşletme (Hızlı / 1 Sayfa)</option>
                 <option value="40">40 İşletme (Orta / 2 Sayfa - ~3 sn)</option>
@@ -371,7 +376,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
           </div>
 
           {errorMessage && (
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
               {errorMessage}
             </div>
           )}
@@ -380,7 +385,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
             <button
               type="submit"
               disabled={loading}
-              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs px-5 py-2.5 rounded-lg transition shadow-sm flex items-center space-x-2"
+              className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-xs flex items-center space-x-2"
             >
               {loading ? (
                 <>
@@ -397,50 +402,50 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
 
       {/* Discovery Results Sandbox View */}
       {searchResult && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-5">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
-              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Keşif Tamamlandı (Önizleme)
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-mono">
+                ✓ Keşif Tamamlandı (Önizleme Havuzu)
               </span>
-              <h3 className="text-lg font-bold text-slate-900 mt-1">
+              <h3 className="text-xl font-extrabold text-slate-950 mt-1.5 tracking-tight">
                 {searchResult.search.location} {searchResult.search.district ? `(${searchResult.search.district})` : ""} — {searchResult.search.sector}
               </h3>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg font-medium text-slate-700">
-                Bulunan İşletme: <strong className="text-slate-900">{searchResult.items.length}</strong>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl font-mono text-slate-700">
+                Bulunan: <strong className="text-slate-950 font-bold">{searchResult.items.length}</strong>
               </span>
-              <span className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg font-medium text-emerald-800">
-                Yeni Aday: <strong>{selectableItems.length}</strong>
+              <span className="bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-xl font-mono text-emerald-800">
+                Yeni Aday: <strong className="font-bold">{selectableItems.length}</strong>
               </span>
-              <span className="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg font-medium text-blue-800">
-                Zaten Listede: <strong>{searchResult.items.length - selectableItems.length}</strong>
+              <span className="bg-slate-100 border border-slate-200/80 px-3.5 py-1.5 rounded-xl font-mono text-slate-700">
+                Listede: <strong className="font-bold">{searchResult.items.length - selectableItems.length}</strong>
               </span>
             </div>
           </div>
 
           {/* Action & Batch Save Bar */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-slate-950 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <div className="text-xs font-bold text-emerald-950 flex items-center gap-2">
+              <div className="text-sm font-bold text-white flex items-center gap-2.5">
                 <span>{selectedLeadIds.size} / {selectableItems.length} Yeni İşletme Seçildi</span>
                 {saveMessage && (
-                  <span className="text-emerald-700 font-semibold bg-emerald-100 px-2 py-0.5 rounded text-[11px]">
+                  <span className="text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2.5 py-0.5 rounded-md text-xs font-semibold">
                     ✓ {saveMessage}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-emerald-800 mt-0.5">
-                İşaretlediğiniz işletmeler tek tıkla CRM listenize aktarılır. İşaretsiz işletmeler veri tabanınızı kirletmez.
+              <p className="text-xs text-slate-400 mt-1">
+                İşaretlediğiniz işletmeler tek tıkla CRM listenize aktarılır. Listenizde olanlar tekrar eklenmez.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={handleClearDiscovery}
-                className="text-xs font-medium text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 transition"
+                className="text-xs font-semibold text-slate-300 hover:text-white px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 transition"
               >
                 Sonuçları Temizle
               </button>
@@ -448,7 +453,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 type="button"
                 disabled={savingLeads || selectedLeadIds.size === 0}
                 onClick={handleSaveSelected}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs px-5 py-2 rounded-lg shadow-sm transition flex items-center space-x-2"
+                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-2"
               >
                 {savingLeads ? (
                   <>
@@ -456,215 +461,221 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                     <span>Kaydediliyor ({selectedLeadIds.size})...</span>
                   </>
                 ) : (
-                  <span>Seçilenleri Kaydet ({selectedLeadIds.size}) →</span>
+                  <span>Seçilenleri CRM&apos;e Aktar ({selectedLeadIds.size}) →</span>
                 )}
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200">
-                <tr>
-                  <th className="px-3 py-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                      disabled={selectableItems.length === 0}
-                      className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer"
-                      title="Tümünü Seç / Kaldır"
-                    />
-                  </th>
-                  <th className="px-3 py-3 font-semibold">Durum</th>
-                  <th className="px-3 py-3 font-semibold">Öncelik & Skor</th>
-                  <th className="px-4 py-3 font-semibold">İşletme Adı & Konum</th>
-                  <th className="px-4 py-3 font-semibold">İletişim</th>
-                  <th className="px-4 py-3 font-semibold">Web Durumu & Fırsat Sinyalleri</th>
-                  <th className="px-4 py-3 font-semibold text-right">İşlem</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {searchResult.items.map((item) => {
-                  const isChecked = selectedLeadIds.has(item.tempId);
-                  return (
-                    <tr
-                      key={item.tempId}
-                      onClick={() => !item.already_saved && toggleItem(item.tempId)}
-                      className={`hover:bg-slate-50/80 transition cursor-pointer ${
-                        isChecked ? "bg-emerald-50/40" : ""
-                      } ${item.already_saved ? "opacity-75 cursor-default bg-slate-50/30" : ""}`}
-                    >
-                      <td className="px-3 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          disabled={item.already_saved}
-                          onChange={() => toggleItem(item.tempId)}
-                          className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer disabled:opacity-30"
-                        />
-                      </td>
+          <div className="border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200/90">
+                  <tr>
+                    <th className="px-4 py-3.5 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleSelectAll}
+                        disabled={selectableItems.length === 0}
+                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        title="Tümünü Seç / Kaldır"
+                      />
+                    </th>
+                    <th className="px-4 py-3.5">Durum</th>
+                    <th className="px-4 py-3.5">Öncelik & Skor</th>
+                    <th className="px-5 py-3.5">İşletme Adı & Konum</th>
+                    <th className="px-5 py-3.5">İletişim</th>
+                    <th className="px-5 py-3.5">Web Durumu & Fırsat Sinyalleri</th>
+                    <th className="px-5 py-3.5 text-right">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {searchResult.items.map((item) => {
+                    const isChecked = selectedLeadIds.has(item.tempId);
+                    return (
+                      <tr
+                        key={item.tempId}
+                        onClick={() => !item.already_saved && toggleItem(item.tempId)}
+                        className={`hover:bg-slate-50/60 transition cursor-pointer ${
+                          isChecked ? "bg-blue-50/40" : ""
+                        } ${item.already_saved ? "opacity-75 cursor-default bg-slate-50/30" : ""}`}
+                      >
+                        <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={item.already_saved}
+                            onChange={() => toggleItem(item.tempId)}
+                            className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer disabled:opacity-30"
+                          />
+                        </td>
 
-                      <td className="px-3 py-3.5 whitespace-nowrap">
-                        {item.already_saved ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            ZATEN LİSTEDE
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            YENİ ADAY
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-3 py-3.5 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold border ${
-                            item.priority === "HOT"
-                              ? "bg-rose-50 text-rose-700 border-rose-200"
-                              : item.priority === "WARM"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : item.priority === "COLD"
-                              ? "bg-blue-50 text-blue-700 border-blue-200"
-                              : "bg-slate-100 text-slate-600 border-slate-200"
-                          }`}
-                        >
-                          {item.priority} ({item.lead_score})
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <div className="font-semibold text-slate-900">{item.name}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                          {item.address || "—"}
-                        </div>
-                        {(item.rating || item.review_count > 0) && (
-                          <div className="text-[10px] text-amber-600 font-medium mt-0.5">
-                            ⭐ {item.rating || 0} ({item.review_count} Yorum)
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3.5 text-slate-700 whitespace-nowrap">
-                        <div>{item.phone || "—"}</div>
-                        {item.instagram && (
-                          <div className="text-[11px] text-pink-600 mt-0.5 font-medium">
-                            @{item.instagram}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                item.website_status === "HAS_WEBSITE"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : item.website_status === "NO_WEBSITE"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                                  : "bg-amber-50 text-amber-700 border-amber-200"
-                              }`}
-                            >
-                              {item.website_status === "HAS_WEBSITE"
-                                ? "SİTE VAR"
-                                : item.website_status === "NO_WEBSITE"
-                                ? "SİTE YOK (FIRSAT)"
-                                : "ERİŞİLEMEZ"}
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {item.already_saved ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                              LİSTEDE
                             </span>
-                            {item.website && (
-                              <a
-                                href={item.website}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="text-[11px] text-blue-600 hover:underline truncate max-w-[140px]"
-                              >
-                                {item.website.replace(/^https?:\/\/(www\.)?/, "")}
-                              </a>
-                            )}
-                          </div>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                              YENİ ADAY
+                            </span>
+                          )}
+                        </td>
 
-                          {/* Quick flaw signals for pitches */}
-                          {item.website_status === "HAS_WEBSITE" && item.audit_preview && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {!item.audit_preview.has_viewport && (
-                                <span className="bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-semibold px-1.5 py-0.2 rounded">
-                                  Mobil Uyumsuz
-                                </span>
-                              )}
-                              {!item.audit_preview.has_whatsapp && (
-                                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-semibold px-1.5 py-0.2 rounded">
-                                  WhatsApp Butonu Yok
-                                </span>
-                              )}
-                              {!item.audit_preview.is_https && (
-                                <span className="bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-semibold px-1.5 py-0.2 rounded">
-                                  Güvensiz (SSL Yok)
-                                </span>
-                              )}
-                              {item.audit_preview.response_time_ms > 2000 && (
-                                <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-semibold px-1.5 py-0.2 rounded">
-                                  Yavaş ({(item.audit_preview.response_time_ms / 1000).toFixed(1)}s)
-                                </span>
-                              )}
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono font-bold border ${
+                              item.priority === "HOT"
+                                ? "bg-rose-100 text-rose-800 border-rose-200"
+                                : item.priority === "WARM"
+                                ? "bg-amber-100 text-amber-800 border-amber-200"
+                                : item.priority === "COLD"
+                                ? "bg-blue-100 text-blue-800 border-blue-200"
+                                : "bg-slate-100 text-slate-600 border-slate-200"
+                            }`}
+                          >
+                            {item.priority} ({item.lead_score})
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="font-bold text-sm text-slate-950">{item.name}</div>
+                          <div className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                            {item.address || "—"}
+                          </div>
+                          {(item.rating || item.review_count > 0) && (
+                            <div className="text-xs text-amber-600 font-semibold mt-1">
+                              ⭐ {item.rating || 0} <span className="text-slate-400 font-normal">({item.review_count} Yorum)</span>
                             </div>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="px-4 py-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        {item.already_saved && item.existing_business_id ? (
-                          <Link
-                            href={`/leads/${item.existing_business_id}`}
-                            className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
-                          >
-                            İncele →
-                          </Link>
-                        ) : (
-                          <span className="text-slate-400 text-[11px] italic">Kaydedilmedi</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <td className="px-5 py-4 text-slate-700 whitespace-nowrap">
+                          <div className="font-mono font-bold text-xs text-slate-900">{item.phone || "—"}</div>
+                          {item.instagram && (
+                            <div className="text-xs text-pink-600 mt-0.5 font-semibold">
+                              @{item.instagram}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  item.website_status === "HAS_WEBSITE"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : item.website_status === "NO_WEBSITE"
+                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}
+                              >
+                                {item.website_status === "HAS_WEBSITE"
+                                  ? "SİTE VAR"
+                                  : item.website_status === "NO_WEBSITE"
+                                  ? "SİTE YOK (FIRSAT)"
+                                  : "ERİŞİLEMEZ"}
+                              </span>
+                              {item.website && (
+                                <a
+                                  href={item.website}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs font-mono text-blue-600 hover:underline truncate max-w-[160px]"
+                                >
+                                  {item.website.replace(/^https?:\/\/(www\.)?/, "")}
+                                </a>
+                              )}
+                            </div>
+
+                            {/* Quick flaw signals for pitches */}
+                            {item.website_status === "HAS_WEBSITE" && item.audit_preview && (
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {!item.audit_preview.has_viewport && (
+                                  <span className="bg-rose-50 text-rose-700 border border-rose-200/80 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                                    Mobil Uyumsuz
+                                  </span>
+                                )}
+                                {!item.audit_preview.has_whatsapp && (
+                                  <span className="bg-amber-50 text-amber-800 border border-amber-200/80 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                                    WhatsApp Yok
+                                  </span>
+                                )}
+                                {!item.audit_preview.is_https && (
+                                  <span className="bg-rose-50 text-rose-700 border border-rose-200/80 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                                    SSL Yok
+                                  </span>
+                                )}
+                                {item.audit_preview.response_time_ms > 2000 && (
+                                  <span className="bg-amber-50 text-amber-800 border border-amber-200/80 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                                    Yavaş ({(item.audit_preview.response_time_ms / 1000).toFixed(1)}s)
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          {item.already_saved && item.existing_business_id ? (
+                            <Link
+                              href={`/leads/${item.existing_business_id}`}
+                              className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                            >
+                              İncele →
+                            </Link>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic">Kaydedilmedi</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {/* Search History Section */}
       {history.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
-            Son Keşif Geçmişi ({history.length})
-          </h3>
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 shadow-xs">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <h3 className="text-base font-bold text-slate-950 tracking-tight">
+              Son Keşif Geçmişi ({history.length})
+            </h3>
+            <span className="text-xs font-mono text-slate-400">Arşiv</span>
+          </div>
+
           <div className="divide-y divide-slate-100">
             {history.map((s) => (
-              <div key={s.id} className="py-3 flex items-center justify-between text-xs">
+              <div key={s.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div>
-                  <div className="font-semibold text-slate-900">
+                  <div className="font-bold text-sm text-slate-950">
                     {s.location} {s.district ? `(${s.district})` : ""} — {s.sector}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">
+                  <div className="text-xs text-slate-500 mt-0.5">
                     {new Date(s.created_at).toLocaleString("tr-TR")} • Kaynaklar: {s.sources.join(", ")}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-slate-600">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-slate-600 font-mono text-xs">
                     <strong>{s.unique_count}</strong> bulunan (<strong>{s.new_count}</strong> yeni, <strong>{s.existing_count}</strong> listede)
                   </span>
                   <button
                     type="button"
                     disabled={loadingSearchId === s.id}
                     onClick={() => handleLoadPastSearch(s.id)}
-                    className="text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded text-[11px] font-semibold transition disabled:opacity-50 cursor-pointer"
+                    className="text-slate-800 hover:text-slate-950 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 border border-slate-200/90 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-50 cursor-pointer"
                   >
                     {loadingSearchId === s.id ? "Yükleniyor..." : "Sonuçları Göster"}
                   </button>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium border ${
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono ${
                       s.status === "completed"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-amber-50 text-amber-700 border-amber-200"
@@ -673,7 +684,6 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                     {s.status === "completed" ? "TAMAMLANDI" : s.status}
                   </span>
                 </div>
-
               </div>
             ))}
           </div>

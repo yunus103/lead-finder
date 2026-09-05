@@ -48,3 +48,56 @@ export async function ingestLeadAction(formData: FormData) {
     return { success: false, error: message };
   }
 }
+
+export async function runLightweightScanAction(businessId: string) {
+  try {
+    const { performLightweightAudit } = await import("@/services/website-service");
+    const audit = await performLightweightAudit(businessId);
+    revalidatePath(`/leads/${businessId}`);
+    revalidatePath("/leads");
+    return { success: true, audit };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export async function runDeepAuditAction(businessId: string) {
+  try {
+    const { performDeepAudit } = await import("@/services/website-service");
+    const audit = await performDeepAudit(businessId);
+    revalidatePath(`/leads/${businessId}`);
+    revalidatePath("/leads");
+    return { success: true, audit };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export async function recalculateScoreAction(businessId: string) {
+  try {
+    const { updateBusinessScore } = await import("@/services/scoring-service");
+    const result = await updateBusinessScore(businessId);
+    revalidatePath(`/leads/${businessId}`);
+    revalidatePath("/leads");
+    return { success: true, result };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export async function recalculateAllScoresAction() {
+  try {
+    const { recalculateAllScores } = await import("@/services/scoring-service");
+    const { count } = await recalculateAllScores();
+    revalidatePath("/leads");
+    return { success: true, count };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+

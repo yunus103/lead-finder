@@ -35,14 +35,14 @@ Do not duplicate detailed information across documents.
 ## Current State
 
 **Status:** In Progress
-
-**Current Phase:** Phase 05 — Website Intelligence
-
-**Current Step:** Step 05 — Website Intelligence
-
+ 
+**Current Phase:** Phase 07 — CRM
+ 
+**Current Step:** Step 07 — CRM
+ 
 **Next Document:**
-
-`/docs/implementation/05-website-intelligence.md`
+ 
+`/docs/implementation/07-crm.md`
 
 ---
 
@@ -206,10 +206,10 @@ V1 is complete when:
 
 # Current Next Step
 
-**Phase 05 — Website Intelligence**
+**Phase 07 — CRM**
 
-**Step 05 — Website Intelligence**
+**Step 07 — CRM**
 
 Detailed instructions:
 
-`/docs/implementation/05-website-intelligence.md`
+`/docs/implementation/07-crm.md`

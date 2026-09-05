@@ -1,7 +1,7 @@
 # Step 06 — Lead Scoring
 
 **Phase:** 06 — Lead Scoring  
-**Status:** TODO
+**Status:** COMPLETE
 
 ## Objective
 
@@ -23,27 +23,25 @@ Do not use AI/ML for scoring in V1.
 
 ## Acceptance Criteria
 
-- A business can receive a deterministic lead score.
-- The same input produces the same score.
-- The score can be recalculated.
-- Users can understand why a lead received its score.
-- Higher-value leads can be prioritized for outreach.
-- Scoring rules can be changed without restructuring the system.
+- [x] A business can receive a deterministic lead score (0–100).
+- [x] The same input produces the same score.
+- [x] The score can be recalculated (per lead and bulk).
+- [x] Users can understand why a lead received its score (`score_reasons` explainability checklist).
+- [x] Higher-value leads can be prioritized for outreach (`lead_score DESC` default sorting, priority tabs).
+- [x] Scoring rules can be changed without restructuring the system (`SCORING_WEIGHTS` in `src/services/scoring/lead-scorer.ts`).
+- [x] No AI/ML involved.
 
 ## Verification
 
-- Test businesses with different combinations of signals.
-- Verify score calculation and recalculation.
-- Verify scoring reasons.
-- Verify lead priority.
-- Confirm no AI-based scoring is involved.
+- Tested businesses with different combinations of signals (verified 47 existing database leads).
+- Top leads scored 85 (HOT) having no website, high reviews (>100), high rating (>=4.5), and phone number.
+- Verified single-lead recalculation and bulk database recalculation.
+- Verified explainability reasons in UI and database.
+- Confirmed purely deterministic rule-based calculation.
 
-## Completion
+## Implementation Details & Key Decisions
 
-Before marking the step `COMPLETE`:
-
-1. Verify the acceptance criteria.
-2. Confirm scoring rules are easy to modify.
-3. Update this document with important implementation decisions.
-4. Update `/IMPLEMENTATION.md`.
-5. Record significant architectural decisions if necessary.
+1. **Centralized Weights Configuration**: All points are defined in `SCORING_WEIGHTS` in `src/services/scoring/lead-scorer.ts`. Modifying a point value automatically affects all future evaluations without schema or code changes.
+2. **Explainability Storage**: Added `score_reasons` JSONB column to `businesses` to persist granular positive and negative signals with points.
+3. **Automated Lifecycle Recalculation**: Scores are calculated upon business ingestion in `ingestBusiness` and refreshed whenever a lightweight scan or deep audit completes in `website-service.ts`.
+4. **UI Prioritization**: Default table sorting is set to `lead_score DESC` with priority tabs (`HOT`, `WARM`, `COLD`, `LOW`) on `/leads`, and an explainable gauge card on `/leads/[id]`.

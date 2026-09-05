@@ -13,6 +13,7 @@ import {
   normalizeName,
   normalizePhone,
 } from "@/lib/normalization";
+import { calculateLeadScore } from "./scoring/lead-scorer";
 
 /**
  * Searches for an existing business using progressively weaker signals:
@@ -174,6 +175,13 @@ export async function ingestBusiness(
     }
 
     if (Object.keys(enrichmentUpdates).length > 0) {
+      // Recalculate score with merged state
+      const mergedBusiness = { ...existing, ...enrichmentUpdates };
+      const scoreRes = calculateLeadScore(mergedBusiness);
+      enrichmentUpdates.lead_score = scoreRes.score;
+      enrichmentUpdates.priority = scoreRes.priority;
+      enrichmentUpdates.score_reasons = scoreRes.reasons;
+
       const { data: updated, error } = await supabaseAdmin
         .from("businesses")
         .update(enrichmentUpdates)
@@ -191,6 +199,17 @@ export async function ingestBusiness(
   } else {
     // Create new canonical business
     isNew = true;
+    const initialStatus = initialWebsiteStatus(input.website);
+    const scoreRes = calculateLeadScore({
+      website: input.website || null,
+      website_status: initialStatus,
+      rating: input.rating ?? null,
+      review_count: input.review_count ?? 0,
+      phone: input.phone || null,
+      instagram: input.instagram || null,
+      is_excluded: false,
+    });
+
     const newRecord = {
       name: input.name.trim(),
       category: input.category || null,
@@ -205,10 +224,11 @@ export async function ingestBusiness(
       instagram_normalized: igNormalized,
       rating: input.rating ?? null,
       review_count: input.review_count ?? 0,
-      website_status: initialWebsiteStatus(input.website),
+      website_status: initialStatus,
       crm_status: "NEW",
-      lead_score: 0,
-      priority: "LOW",
+      lead_score: scoreRes.score,
+      priority: scoreRes.priority,
+      score_reasons: scoreRes.reasons,
       is_excluded: false,
     };
 
@@ -253,13 +273,23 @@ export async function getBusinesses(options?: {
   search?: string;
   category?: string;
   websiteStatus?: string;
+  priority?: string;
+  sortBy?: "score" | "newest";
   limit?: number;
   offset?: number;
 }): Promise<{ businesses: Business[]; total: number }> {
   let query = supabaseAdmin
     .from("businesses")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false });
+    .select("*", { count: "exact" });
+
+  if (options?.sortBy === "newest") {
+    query = query.order("created_at", { ascending: false });
+  } else {
+    // Default: prioritize highest lead score first
+    query = query
+      .order("lead_score", { ascending: false })
+      .order("created_at", { ascending: false });
+  }
 
   if (options?.search) {
     query = query.ilike("name", `%${options.search}%`);
@@ -269,6 +299,9 @@ export async function getBusinesses(options?: {
   }
   if (options?.websiteStatus) {
     query = query.eq("website_status", options.websiteStatus);
+  }
+  if (options?.priority) {
+    query = query.eq("priority", options.priority);
   }
 
   const limit = options?.limit || 50;

@@ -21,6 +21,8 @@ export interface Business {
   lead_score: number;
   priority: string;
   is_excluded: boolean;
+  score_reasons?: import("./scoring").ScoreReason[];
+  last_scanned_at?: string | null;
   created_at: string;
   updated_at: string;
 }

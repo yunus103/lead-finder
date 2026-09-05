@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBusinessWithSources } from "@/services/business-service";
+import { getLatestWebsiteAudit, performDeepAudit } from "@/services/website-service";
+import { WebsiteIntelligenceCard } from "./website-intelligence-card";
+import { LeadScoreCard } from "./lead-score-card";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +20,16 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   }
 
   const { business: b, sources } = data;
+  let latestAudit = await getLatestWebsiteAudit(b.id);
+
+  // If business has a website but no deep audit yet, perform it on-demand
+  if (!latestAudit && b.website && b.website.trim() !== "") {
+    try {
+      latestAudit = await performDeepAudit(b.id);
+    } catch (e) {
+      console.warn("On-demand deep audit failed on page load:", e);
+    }
+  }
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -46,6 +59,8 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : b.website_status === "NO_WEBSITE"
                   ? "bg-rose-50 text-rose-700 border-rose-200"
+                  : b.website_status === "UNREACHABLE"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
                   : "bg-slate-100 text-slate-600 border-slate-200"
               }`}
             >
@@ -54,6 +69,8 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
                 ? "VAR"
                 : b.website_status === "NO_WEBSITE"
                 ? "YOK"
+                : b.website_status === "UNREACHABLE"
+                ? "ERİŞİLEMEZ"
                 : "BİLİNMİYOR"}
             </span>
           </div>
@@ -141,6 +158,12 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Lead Scoring */}
+      <LeadScoreCard business={b} />
+
+      {/* Website Intelligence */}
+      <WebsiteIntelligenceCard business={b} latestAudit={latestAudit} />
 
       {/* Discovery Sources */}
       <div className="border border-slate-200 bg-white rounded-xl p-6 shadow-sm">

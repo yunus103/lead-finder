@@ -19,6 +19,7 @@ interface GooglePlaceNew {
 
 interface GooglePlacesSearchResponse {
   places?: GooglePlaceNew[];
+  nextPageToken?: string;
   error?: {
     code: number;
     message: string;
@@ -39,6 +40,7 @@ export class GoogleMapsProvider implements IDiscoveryProvider {
     location: string;
     district?: string;
     sector: string;
+    limit?: number;
   }): Promise<RawDiscoveredLead[]> {
     if (!this.apiKey) {
       console.warn("GoogleMapsProvider: GOOGLE_PLACES_API_KEY is not set. Skipping real Maps query.");
@@ -48,7 +50,11 @@ export class GoogleMapsProvider implements IDiscoveryProvider {
     const queryParts = [params.district, params.location, params.sector].filter(Boolean);
     const textQuery = queryParts.join(" ");
 
-    // Specific field mask to optimize response size and cost
+    const targetLimit = Math.min(60, Math.max(20, params.limit || 20));
+    const allPlaces: GooglePlaceNew[] = [];
+    let pageToken: string | undefined = undefined;
+
+    // Field mask includes nextPageToken to support 20/40/60 lead discovery
     const fieldMask = [
       "places.id",
       "places.displayName",
@@ -59,36 +65,58 @@ export class GoogleMapsProvider implements IDiscoveryProvider {
       "places.rating",
       "places.userRatingCount",
       "places.types",
+      "nextPageToken",
     ].join(",");
 
     try {
-      const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": this.apiKey,
-          "X-Goog-FieldMask": fieldMask,
-        },
-        body: JSON.stringify({
+      while (allPlaces.length < targetLimit) {
+        const bodyPayload: Record<string, unknown> = {
           textQuery,
           languageCode: "tr",
           maxResultCount: 20,
-        }),
-      });
+        };
+        if (pageToken) {
+          bodyPayload.pageToken = pageToken;
+        }
 
-      const data = (await response.json()) as GooglePlacesSearchResponse;
+        const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": this.apiKey,
+            "X-Goog-FieldMask": fieldMask,
+          },
+          body: JSON.stringify(bodyPayload),
+        });
 
-      if (!response.ok || data.error) {
-        const errorMsg = data.error?.message || response.statusText;
-        console.error("Google Places API Error:", errorMsg);
-        throw new Error(`Google Places API Hatası (${response.status}): ${errorMsg}`);
+        const data = (await response.json()) as GooglePlacesSearchResponse;
+
+        if (!response.ok || data.error) {
+          if (allPlaces.length > 0) break;
+          const errorMsg = data.error?.message || response.statusText;
+          console.error("Google Places API Error:", errorMsg);
+          throw new Error(`Google Places API Hatası (${response.status}): ${errorMsg}`);
+        }
+
+        if (!data.places || data.places.length === 0) {
+          break;
+        }
+
+        allPlaces.push(...data.places);
+
+        if (!data.nextPageToken || allPlaces.length >= targetLimit) {
+          break;
+        }
+
+        pageToken = data.nextPageToken;
+        await new Promise((resolve) => setTimeout(resolve, 150));
       }
 
-      if (!data.places || data.places.length === 0) {
+      if (allPlaces.length === 0) {
         return [];
       }
 
-      return data.places.map((place) => ({
+      return allPlaces.map((place) => ({
         name: place.displayName?.text?.trim() || "İsimsiz İşletme",
         category: params.sector,
         address: place.formattedAddress || null,

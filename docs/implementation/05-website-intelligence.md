@@ -1,7 +1,7 @@
 # Step 05 — Website Intelligence
 
 **Phase:** 05 — Website Intelligence  
-**Status:** TODO
+**Status:** COMPLETE
 
 ## Objective
 
@@ -41,29 +41,27 @@ Do not turn this into a full website auditing platform.
 
 ## Acceptance Criteria
 
-- Businesses without websites can be identified.
-- Existing websites can be checked reliably.
-- Lightweight analysis produces useful lead-quality signals.
-- Results are persisted and visible on the relevant business/lead.
-- Deep audits can be manually triggered.
-- Website failures do not break discovery or the rest of the application.
-- Lightweight scanning is efficient enough for batches of leads.
+- [x] Businesses without websites can be identified (`NO_WEBSITE`).
+- [x] Existing websites can be checked reliably.
+- [x] Lightweight analysis produces useful lead-quality signals (HTTPS, response time, title, H1, viewport, CMS tech, social links, contact info).
+- [x] Results are persisted in `website_audits` and visible on the relevant business/lead (`/leads/[id]`).
+- [x] Deep audits can be manually triggered with heading breakdown, missing alt counts, security headers, and pitch opportunities.
+- [x] Website failures (timeouts, SSL errors, unreachable) do not break discovery or the rest of the application.
+- [x] Lightweight scanning is efficient enough for batches of leads (chunked concurrency of 5 with 5s timeout).
 
 ## Verification
 
-- Test businesses with no website.
-- Test valid and invalid URLs.
-- Test HTTPS and non-HTTPS sites where applicable.
-- Test unreachable/timeout scenarios.
-- Verify lightweight results are persisted.
-- Run a manual deep audit and verify its results.
+- Tested businesses with no website -> status set to `NO_WEBSITE`.
+- Tested valid and invalid URLs -> handled gracefully without crashing.
+- Tested HTTPS and non-HTTPS fallback -> captured accurately.
+- Tested unreachable/timeout scenarios -> mapped to `timeout` / `unreachable` with status `UNREACHABLE`.
+- Verified lightweight results are persisted in `website_audits` and linked to `businesses`.
+- Verified manual deep audit action and pitch opportunities generation.
 
-## Completion
+## Implementation Details & Key Decisions
 
-Before marking the step `COMPLETE`:
-
-1. Verify the acceptance criteria.
-2. Check that scans do not unnecessarily consume resources.
-3. Update this document with important implementation decisions.
-4. Update `/IMPLEMENTATION.md`.
-5. Record significant architectural decisions if necessary.
+1. **Parser Strategy**: Used `cheerio` for server-side HTML parsing to reliably inspect DOM elements and attributes across malformed websites without heavy browser dependencies (Puppeteer/Chromium).
+2. **Resource Throttling**: Limited HTML body ingestion to 500 KB and enforced `AbortSignal.timeout(5000)` per scan.
+3. **Discovery Batching**: Implemented controlled concurrency batches of 5 in `executeDiscovery` using `Promise.allSettled` to scan newly discovered leads with websites without slowing down discovery or blowing connection pools.
+4. **CRM Contact Enrichment**: Extracted emails, phones, and Instagram handles automatically enrich empty canonical attributes on the business entity.
+5. **Pitch Opportunities**: Deep audits generate actionable Turkish pitch bullets (e.g. missing H1, unoptimized WordPress, missing meta description, no mobile viewport) for calling pitches.

@@ -12,6 +12,7 @@ export class MockDiscoveryProvider implements IDiscoveryProvider {
     location: string;
     district?: string;
     sector: string;
+    limit?: number;
   }): Promise<RawDiscoveredLead[]> {
     const loc = params.district ? `${params.district}, ${params.location}` : params.location;
 

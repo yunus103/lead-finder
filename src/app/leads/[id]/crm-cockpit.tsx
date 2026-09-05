@@ -229,37 +229,37 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
                 </span>
               )}
             </div>
-            <div className="text-2xl font-extrabold font-mono text-slate-950 tracking-tight mt-0.5">
+            <div className="text-xl sm:text-2xl font-extrabold font-mono text-slate-950 tracking-tight mt-0.5 truncate">
               {rawPhone || "Telefon Numarası Yok"}
             </div>
           </div>
         </div>
 
         {/* Call & WhatsApp Trigger Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
           {rawPhone && (
             <>
               <a
                 href={`tel:${normalizedPhone}`}
-                className="h-10 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5"
+                className="h-10 px-3 sm:px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold shadow-xs transition inline-flex items-center justify-center gap-1.5"
               >
-                <span>Hemen Ara</span>
+                <span>📞 Hemen Ara</span>
               </a>
               <button
                 type="button"
                 onClick={copyPhone}
-                className="h-10 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
+                className="h-10 px-3 sm:px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs inline-flex items-center justify-center"
               >
-                Kopyala
+                {copiedPhone ? "✓ Kopyalandı" : "Kopyala"}
               </button>
               <a
                 href={`https://wa.me/${waPhone}?text=${encodeURIComponent(generateWhatsAppMessage())}`}
                 target="_blank"
                 rel="noreferrer"
-                className="h-10 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5"
+                className="h-10 px-3 sm:px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition inline-flex items-center justify-center gap-1.5"
                 title="Tek tıkla hazır Türkçe satış mesajını WhatsApp ile açar"
               >
-                <span>💬 WhatsApp Teklifi</span>
+                <span>💬 WhatsApp</span>
               </a>
             </>
           )}
@@ -268,10 +268,10 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
           <button
             type="button"
             onClick={handleNextLead}
-            className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5 ml-auto"
+            className="h-10 px-3 sm:px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs transition inline-flex items-center justify-center gap-1.5 sm:ml-auto"
             title="Aramayı tamamla veya atla, sıradaki en yüksek puanlı adaya geç"
           >
-            <span>Sıradakine Geç →</span>
+            <span>Sıradaki →</span>
           </button>
         </div>
       </div>

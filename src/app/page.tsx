@@ -75,13 +75,13 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 w-full lg:w-auto">
             <Link
               href="/queue"
-              className="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-sm transition hover:shadow-md"
+              className="inline-flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-sm transition hover:shadow-md w-full sm:w-auto"
             >
-              <span>📞 Güne Başla / Arama Sırası</span>
-              <span className="px-2.5 py-0.5 rounded-md bg-blue-700 text-xs font-mono font-extrabold tracking-wide">
+              <span>📞 Arama Sırası</span>
+              <span className="px-2 py-0.5 rounded-md bg-blue-700 text-xs font-mono font-extrabold tracking-wide">
                 {pipeline.toCall} Aday
               </span>
               <span className="font-mono text-sm">→</span>
@@ -89,7 +89,7 @@ export default async function HomePage() {
 
             <Link
               href="/discover"
-              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-sm"
+              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-sm w-full sm:w-auto"
             >
               <span>🔍 Yeni Keşfet</span>
             </Link>

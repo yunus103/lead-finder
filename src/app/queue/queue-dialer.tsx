@@ -177,8 +177,8 @@ export function QueueDialer({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 space-y-3.5">
       {/* 1. Queue Control Header (Filter Presets + Remaining Count) */}
-      <div className="bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="bg-white border border-slate-200 rounded-xl px-4 sm:px-5 py-3 sm:py-2.5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
           <div className="flex items-center gap-2 font-semibold text-slate-950 text-sm tracking-tight">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
             <span>Arama Sırası</span>
@@ -191,7 +191,7 @@ export function QueueDialer({
             <select
               value={activeCategory || ""}
               onChange={(e) => handleFilterChange(e.target.value || undefined, activeDistrict)}
-              className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none focus:border-slate-400 transition"
+              className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none focus:border-slate-400 transition max-w-[150px] sm:max-w-none truncate"
             >
               <option value="">Tüm Sektörler ({meta.categories.length})</option>
               {meta.categories.map((c) => (
@@ -210,7 +210,7 @@ export function QueueDialer({
             <select
               value={activeDistrict || ""}
               onChange={(e) => handleFilterChange(activeCategory, e.target.value || undefined)}
-              className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none focus:border-slate-400 transition"
+              className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none focus:border-slate-400 transition max-w-[130px] sm:max-w-none truncate"
             >
               <option value="">Tüm İlçeler ({meta.districts.length})</option>
               {meta.districts.map((d) => (
@@ -225,7 +225,7 @@ export function QueueDialer({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-auto">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
           <span className="bg-slate-950 text-white px-3 py-1.5 rounded-lg text-xs font-mono font-semibold tracking-tight">
             {meta.remainingCount} Aday Kaldı
           </span>
@@ -396,20 +396,20 @@ export function QueueDialer({
             </div>
 
             {/* Phone Number: Guaranteed 1 line, bold, zero overflow */}
-            <div className="font-mono text-3xl sm:text-4xl font-extrabold text-white tracking-tight select-all leading-none">
+            <div className="font-mono text-2xl sm:text-4xl font-extrabold text-white tracking-tight select-all leading-tight truncate">
               {rawPhone || "Telefon Kaydı Yok"}
             </div>
 
             {/* 3 Action Buttons in an equal 3-column grid */}
             {rawPhone && (
-              <div className="grid grid-cols-3 gap-2.5 pt-1">
+              <div className="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1">
                 {/* Hemen Ara */}
                 <a
                   href={`tel:${normalizedPhone}`}
-                  className="h-11 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-950 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                  className="h-11 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-950 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition shadow-xs"
                   title="Telefon uygulamasını başlat"
                 >
-                  <span className="text-base">📞</span>
+                  <span className="text-sm sm:text-base">📞</span>
                   <span>Ara</span>
                 </a>
 
@@ -417,11 +417,11 @@ export function QueueDialer({
                 <button
                   type="button"
                   onClick={copyPhone}
-                  className="h-11 bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2 border border-slate-700 transition shadow-xs"
+                  className="h-11 bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-white rounded-lg font-medium text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 border border-slate-700 transition shadow-xs"
                   title="Numarayı panoya kopyala"
                 >
                   <span>{copiedPhone ? "✓" : "📋"}</span>
-                  <span>{copiedPhone ? "Kopyalandı" : "Kopyala"}</span>
+                  <span className="truncate">{copiedPhone ? "Kopyalandı" : "Kopyala"}</span>
                 </button>
 
                 {/* WhatsApp */}
@@ -429,11 +429,11 @@ export function QueueDialer({
                   href={`https://wa.me/${waPhone}?text=${encodeURIComponent(getWhatsAppMessage())}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="h-11 bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                  className="h-11 bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition shadow-xs"
                   title="Hazır Türkçe satış mesajı ile WhatsApp sohbetini aç"
                 >
-                  <span className="text-base">💬</span>
-                  <span>WhatsApp</span>
+                  <span className="text-sm sm:text-base">💬</span>
+                  <span className="truncate">WhatsApp</span>
                 </a>
               </div>
             )}

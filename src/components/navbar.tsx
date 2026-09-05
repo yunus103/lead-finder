@@ -17,15 +17,15 @@ export function Navbar() {
     <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Real Logo + Tabs */}
-        <div className="flex items-center gap-8 h-full">
-          <Link href="/" className="flex items-center gap-3 shrink-0 py-2">
+        <div className="flex items-center gap-2 sm:gap-8 h-full min-w-0">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 shrink-0 py-2">
             <Image
               src="/logo.png"
               alt="Yaytech Studio"
               width={190}
               height={42}
               priority
-              className="h-8 sm:h-9 w-auto object-contain"
+              className="h-6 sm:h-9 w-auto object-contain"
             />
             <span className="h-4 w-px bg-slate-300 hidden md:block"></span>
             <span className="text-xs uppercase tracking-widest font-mono text-slate-500 font-semibold hidden md:inline">
@@ -33,7 +33,7 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* Clean Desktop Navigation Tabs with Bottom Border Indicator */}
+          {/* Clean Desktop/Mobile Navigation Tabs with Bottom Border Indicator */}
           <nav className="flex items-center gap-1 sm:gap-6 h-full">
             {navLinks.map((link) => {
               const isActive =
@@ -44,7 +44,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`h-full flex items-center px-1 text-sm transition border-b-2 ${
+                  className={`h-full flex items-center px-2 sm:px-1 text-xs sm:text-sm transition border-b-2 ${
                     isActive
                       ? "border-slate-950 text-slate-950 font-semibold"
                       : "border-transparent text-slate-500 hover:text-slate-900 font-medium"
@@ -58,17 +58,18 @@ export function Navbar() {
         </div>
 
         {/* Right: Primary Call Action */}
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-mono pr-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 font-mono pr-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>V1.0</span>
           </div>
 
           <Link
             href="/queue"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition shadow-xs shrink-0"
           >
-            <span>Arama Sırası</span>
+            <span className="hidden sm:inline">Arama Sırası</span>
+            <span className="sm:hidden font-bold">Kokpit</span>
             <span className="font-mono text-xs opacity-90">→</span>
           </Link>
         </div>

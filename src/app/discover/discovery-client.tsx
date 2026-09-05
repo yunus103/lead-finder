@@ -420,11 +420,11 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full md:w-auto">
               <button
                 type="button"
                 onClick={handleClearDiscovery}
-                className="text-xs font-semibold text-slate-300 hover:text-white px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 transition"
+                className="text-xs font-semibold text-slate-300 hover:text-white px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 transition text-center"
               >
                 Sonuçları Temizle
               </button>
@@ -432,7 +432,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 type="button"
                 disabled={savingLeads || selectedLeadIds.size === 0}
                 onClick={handleSaveSelected}
-                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-2"
+                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition flex items-center justify-center space-x-2"
               >
                 {savingLeads ? (
                   <>

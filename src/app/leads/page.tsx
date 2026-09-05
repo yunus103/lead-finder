@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getBusinesses } from "@/services/business-service";
 import { NewLeadDialog } from "./new-lead-dialog";
-import { RecalculateAllButton } from "./recalculate-all-button";
 
 import { CRM_STATUS_CONFIG, CrmStatus } from "@/types/crm";
 
@@ -114,7 +113,6 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <RecalculateAllButton />
           <NewLeadDialog />
         </div>
       </div>

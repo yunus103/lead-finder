@@ -10,10 +10,7 @@ export async function runDiscoveryAction(formData: FormData) {
   const district = (formData.get("district") as string) || undefined;
   const sector = formData.get("sector") as string;
 
-  const sources: DiscoveryProvider[] = [];
-  if (formData.get("source_maps")) sources.push("google_maps");
-  if (formData.get("source_search")) sources.push("google_search");
-  if (formData.get("source_instagram")) sources.push("instagram");
+  const sources: DiscoveryProvider[] = ["google_maps"];
 
   const limitStr = formData.get("limit") as string;
   const limit = limitStr ? parseInt(limitStr, 10) : 20;
@@ -23,9 +20,6 @@ export async function runDiscoveryAction(formData: FormData) {
   }
   if (!sector || !sector.trim()) {
     return { success: false, error: "Lütfen bir sektör / kategori belirtin." };
-  }
-  if (sources.length === 0) {
-    sources.push("google_maps");
   }
 
   try {

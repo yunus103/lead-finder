@@ -326,36 +326,15 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-2">
-                Sorgulanacak Kaynaklar
+                Aktif Keşif Kaynağı
               </label>
-              <div className="flex flex-wrap gap-3">
-                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition">
-                  <input
-                    type="checkbox"
-                    name="source_maps"
-                    defaultChecked
-                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
-                  />
-                  <span className="font-semibold">Google Haritalar</span>
-                </label>
-                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition">
-                  <input
-                    type="checkbox"
-                    name="source_search"
-                    defaultChecked
-                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
-                  />
-                  <span className="font-semibold">Google Arama</span>
-                </label>
-                <label className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs text-slate-800 cursor-pointer hover:bg-slate-100 hover:border-slate-300 transition">
-                  <input
-                    type="checkbox"
-                    name="source_instagram"
-                    defaultChecked
-                    className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
-                  />
-                  <span className="font-semibold">Instagram</span>
-                </label>
+              <input type="hidden" name="source_maps" value="on" />
+              <div className="flex items-center space-x-2.5 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs text-slate-800">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="font-bold text-slate-900">Google Haritalar & Yerel Ağ</span>
+                <span className="text-[10px] font-mono text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded ml-auto">
+                  Canlı API
+                </span>
               </div>
             </div>
 

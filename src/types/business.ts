@@ -59,6 +59,10 @@ export interface IngestBusinessInput {
   external_id?: string | null; // e.g. Google Place ID
   source_url?: string | null;
   raw_data?: Record<string, unknown>;
+  lead_score?: number;
+  priority?: string;
+  score_reasons?: Array<{ label: string; points: number; type: "positive" | "negative"; category: string }> | import("./scoring").ScoreReason[];
+  website_status?: WebsiteStatus;
 }
 
 export type DeduplicationMatchReason =

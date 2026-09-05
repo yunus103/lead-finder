@@ -199,16 +199,19 @@ export async function ingestBusiness(
   } else {
     // Create new canonical business
     isNew = true;
-    const initialStatus = initialWebsiteStatus(input.website);
-    const scoreRes = calculateLeadScore({
-      website: input.website || null,
-      website_status: initialStatus,
-      rating: input.rating ?? null,
-      review_count: input.review_count ?? 0,
-      phone: input.phone || null,
-      instagram: input.instagram || null,
-      is_excluded: false,
-    });
+    const initialStatus = input.website_status || initialWebsiteStatus(input.website);
+    const scoreRes =
+      input.lead_score !== undefined
+        ? { score: input.lead_score, priority: input.priority || "LOW", reasons: input.score_reasons || [] }
+        : calculateLeadScore({
+            website: input.website || null,
+            website_status: initialStatus,
+            rating: input.rating ?? null,
+            review_count: input.review_count ?? 0,
+            phone: input.phone || null,
+            instagram: input.instagram || null,
+            is_excluded: false,
+          });
 
     const newRecord = {
       name: input.name.trim(),

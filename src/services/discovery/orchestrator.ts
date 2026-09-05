@@ -369,70 +369,82 @@ export async function saveSelectedCandidateLeads(
   leads: DiscoveredCandidateLead[]
 ): Promise<{ savedCount: number; savedIds: string[] }> {
   const savedIds: string[] = [];
+  const BATCH_SIZE = 5;
 
-  for (const lead of leads) {
-    const ingestRes = await ingestBusiness({
-      name: lead.name,
-      category: lead.category,
-      address: lead.address,
-      city: lead.city,
-      district: lead.district,
-      phone: lead.phone,
-      website: lead.website,
-      instagram: lead.instagram,
-      rating: lead.rating,
-      review_count: lead.review_count,
-      provider: lead.provider,
-      external_id: lead.external_id,
-      source_url: lead.source_url,
-      raw_data: lead.raw_data,
-    });
-
-    const businessId = ingestRes.business.id;
-    savedIds.push(businessId);
-
-    // Fast batch write: update score, priority, reasons, and website status
-    await supabaseAdmin
-      .from("businesses")
-      .update({
-        website_status: lead.website_status,
-        lead_score: lead.lead_score,
-        priority: lead.priority,
-        score_reasons: lead.score_reasons,
-        last_scanned_at: new Date().toISOString(),
-      })
-      .eq("id", businessId);
-
-    // If we already collected lightweight audit details during discovery, persist it immediately without external fetch
-    if (lead.website && lead.audit_preview) {
-      try {
-        await supabaseAdmin.from("website_audits").insert({
-          business_id: businessId,
-          audit_type: "lightweight",
-          url: lead.website,
-          status: "success",
-          response_time_ms: lead.audit_preview.response_time_ms,
-          is_https: lead.audit_preview.is_https,
-          has_viewport: lead.audit_preview.has_viewport,
-          technologies: [],
-          deep_audit_data: {
-            hasWhatsApp: lead.audit_preview.has_whatsapp,
-            hasCallButton: true,
-            isMobileResponsive: lead.audit_preview.has_viewport,
-            speedLabel:
-              lead.audit_preview.response_time_ms > 2500
-                ? "Yavaş"
-                : lead.audit_preview.response_time_ms > 1500
-                ? "Orta"
-                : "Hızlı",
-            salesPitch: "",
-            problems: [],
-          },
+  for (let i = 0; i < leads.length; i += BATCH_SIZE) {
+    const chunk = leads.slice(i, i + BATCH_SIZE);
+    const chunkIds = await Promise.all(
+      chunk.map(async (lead) => {
+        const ingestRes = await ingestBusiness({
+          name: lead.name,
+          category: lead.category,
+          address: lead.address,
+          city: lead.city,
+          district: lead.district,
+          phone: lead.phone,
+          website: lead.website,
+          instagram: lead.instagram,
+          rating: lead.rating,
+          review_count: lead.review_count,
+          provider: lead.provider,
+          external_id: lead.external_id,
+          source_url: lead.source_url,
+          raw_data: lead.raw_data,
+          lead_score: lead.lead_score,
+          priority: lead.priority,
+          score_reasons: lead.score_reasons,
+          website_status: lead.website_status,
         });
-      } catch (auditInsertErr) {
-        console.warn("Lightweight audit insert warning on save:", auditInsertErr);
-      }
-    }
+
+        const businessId = ingestRes.business.id;
+
+        if (!ingestRes.isNew) {
+          await supabaseAdmin
+            .from("businesses")
+            .update({
+              website_status: lead.website_status,
+              lead_score: lead.lead_score,
+              priority: lead.priority,
+              score_reasons: lead.score_reasons,
+              last_scanned_at: new Date().toISOString(),
+            })
+            .eq("id", businessId);
+        }
+
+        if (lead.website && lead.audit_preview) {
+          try {
+            await supabaseAdmin.from("website_audits").insert({
+              business_id: businessId,
+              audit_type: "lightweight",
+              url: lead.website,
+              status: "success",
+              response_time_ms: lead.audit_preview.response_time_ms,
+              is_https: lead.audit_preview.is_https,
+              has_viewport: lead.audit_preview.has_viewport,
+              technologies: [],
+              deep_audit_data: {
+                hasWhatsApp: lead.audit_preview.has_whatsapp,
+                hasCallButton: true,
+                isMobileResponsive: lead.audit_preview.has_viewport,
+                speedLabel:
+                  lead.audit_preview.response_time_ms > 2500
+                    ? "Yavaş"
+                    : lead.audit_preview.response_time_ms > 1500
+                    ? "Orta"
+                    : "Hızlı",
+                salesPitch: "",
+                problems: [],
+              },
+            });
+          } catch (auditInsertErr) {
+            console.warn("Lightweight audit insert warning on save:", auditInsertErr);
+          }
+        }
+
+        return businessId;
+      })
+    );
+    savedIds.push(...chunkIds);
   }
 
   return { savedCount: savedIds.length, savedIds };

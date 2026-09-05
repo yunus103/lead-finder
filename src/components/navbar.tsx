@@ -1,47 +1,80 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export function Navbar() {
+  const pathname = usePathname();
+
+  const navLinks = [
+    { href: "/", label: "Panel" },
+    { href: "/discover", label: "Keşif" },
+    { href: "/leads", label: "İşletmeler" },
+  ];
+
   return (
-    <header className="border-b border-slate-200 bg-white/90 backdrop-blur sticky top-0 z-50">
+    <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-8">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-emerald-600 font-bold text-lg tracking-tight">Yaytech</span>
-            <span className="text-slate-800 font-semibold text-sm">Lead Intelligence</span>
+        {/* Left: Real Logo + Tabs */}
+        <div className="flex items-center gap-8 h-full">
+          <Link href="/" className="flex items-center gap-3 shrink-0 py-2">
+            <Image
+              src="/logo.png"
+              alt="Yaytech Studio"
+              width={190}
+              height={42}
+              priority
+              className="h-8 sm:h-9 w-auto object-contain"
+            />
+            <span className="h-4 w-px bg-slate-300 hidden md:block"></span>
+            <span className="text-xs uppercase tracking-widest font-mono text-slate-500 font-semibold hidden md:inline">
+              Lead Intelligence
+            </span>
           </Link>
-          <nav className="flex space-x-2">
-            <Link
-              href="/"
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-medium transition"
-            >
-              Panel
-            </Link>
-            <Link
-              href="/discover"
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-medium transition"
-            >
-              Keşif Yap
-            </Link>
-            <Link
-              href="/leads"
-              className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-medium transition"
-            >
-              İşletmeler
-            </Link>
-            <Link
-              href="/queue"
-              className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1.5"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Arama Sırası</span>
-            </Link>
+
+          {/* Clean Desktop Navigation Tabs with Bottom Border Indicator */}
+          <nav className="flex items-center gap-1 sm:gap-6 h-full">
+            {navLinks.map((link) => {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`h-full flex items-center px-1 text-sm transition border-b-2 ${
+                    isActive
+                      ? "border-slate-950 text-slate-950 font-semibold"
+                      : "border-transparent text-slate-500 hover:text-slate-900 font-medium"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
-        <div className="flex items-center space-x-2 text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Dahili Sistem (V1)</span>
+
+        {/* Right: Primary Call Action */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-mono pr-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>V1.0</span>
+          </div>
+
+          <Link
+            href="/queue"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition shadow-xs"
+          >
+            <span>Arama Sırası</span>
+            <span className="font-mono text-xs opacity-90">→</span>
+          </Link>
         </div>
       </div>
     </header>
   );
 }
+
+

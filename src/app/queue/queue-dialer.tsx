@@ -161,367 +161,433 @@ export function QueueDialer({
     router.push(`/queue?${params.toString()}`);
   };
 
+  const getPriorityStyle = (p?: string) => {
+    switch (p) {
+      case "HOT":
+        return "bg-rose-100 text-rose-800 border-rose-300";
+      case "WARM":
+        return "bg-amber-100 text-amber-800 border-amber-300";
+      case "COLD":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      default:
+        return "bg-slate-100 text-slate-700 border-slate-300";
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 space-y-3.5">
       {/* 1. Queue Control Header (Filter Presets + Remaining Count) */}
-      <div className="bg-white border border-slate-200 rounded-xl px-5 py-3 mb-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 font-bold text-slate-900 text-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <div className="bg-white border border-slate-200 rounded-xl px-5 py-2.5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 font-semibold text-slate-950 text-sm tracking-tight">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
             <span>Arama Sırası</span>
           </div>
 
           <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
 
           {/* Category Quick Filter */}
-          <select
-            value={activeCategory || ""}
-            onChange={(e) => handleFilterChange(e.target.value || undefined, activeDistrict)}
-            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:border-emerald-500"
-          >
-            <option value="">Tüm Sektörler ({meta.categories.length})</option>
-            {meta.categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={activeCategory || ""}
+              onChange={(e) => handleFilterChange(e.target.value || undefined, activeDistrict)}
+              className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none focus:border-slate-400 transition"
+            >
+              <option value="">Tüm Sektörler ({meta.categories.length})</option>
+              {meta.categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+              ▼
+            </span>
+          </div>
 
           {/* District Quick Filter */}
-          <select
-            value={activeDistrict || ""}
-            onChange={(e) => handleFilterChange(activeCategory, e.target.value || undefined)}
-            className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:border-emerald-500"
-          >
-            <option value="">Tüm İlçeler ({meta.districts.length})</option>
-            {meta.districts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={activeDistrict || ""}
+              onChange={(e) => handleFilterChange(activeCategory, e.target.value || undefined)}
+              className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-3 py-1.5 pr-7 appearance-none cursor-pointer focus:outline-none focus:border-slate-400 transition"
+            >
+              <option value="">Tüm İlçeler ({meta.districts.length})</option>
+              {meta.districts.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+              ▼
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs">
-          <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-bold">
+        <div className="flex items-center gap-3 self-end sm:self-auto">
+          <span className="bg-slate-950 text-white px-3 py-1.5 rounded-lg text-xs font-mono font-semibold tracking-tight">
             {meta.remainingCount} Aday Kaldı
           </span>
           <Link
             href={`/leads/${lead.id}`}
             target="_blank"
-            className="text-slate-500 hover:text-slate-900 underline font-medium"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-950 transition flex items-center gap-1"
             title="Yeni sekmede tam kurumsal ve teknik detayları aç"
           >
-            Detaylı İncele ↗
+            <span>Detaylı İncele</span>
+            <span className="font-mono">↗</span>
           </Link>
         </div>
       </div>
 
-      {/* 2. Focused Single-Screen Calling Cockpit */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column (5 Cols): Business Profile, Signals & Score */}
-          <div className="lg:col-span-5 space-y-4 border-b lg:border-b-0 lg:border-r border-slate-200 pb-5 lg:pb-0 lg:pr-6">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded">
-                  Skor: {lead.lead_score} • {lead.priority}
-                </span>
-                <span
-                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                    lead.website_status === "NO_WEBSITE"
-                      ? "bg-rose-50 text-rose-700 border-rose-200"
-                      : lead.website_status === "HAS_WEBSITE"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}
-                >
-                  {lead.website_status === "NO_WEBSITE"
-                    ? "Web Sitesi Yok"
-                    : lead.website_status === "HAS_WEBSITE"
-                    ? "Web Sitesi Var"
-                    : "Erişilemez"}
-                </span>
-              </div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-snug">
-                {lead.name}
-              </h1>
-              <div className="text-xs text-slate-500 mt-1.5 flex flex-wrap items-center gap-2">
-                <span>{lead.category || "Genel Ticari"}</span>
-                <span>•</span>
-                <span className="font-medium text-slate-700">
-                  {lead.city || "İstanbul"} {lead.district ? `(${lead.district})` : ""}
-                </span>
-                {lead.google_maps_url && (
-                  <>
-                    <span>•</span>
-                    <a
-                      href={lead.google_maps_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-semibold bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded text-[11px] transition shadow-2xs"
-                      title="Google Haritalar profilini ve kullanıcı yorumlarını yeni sekmede aç"
-                    >
-                      <span>📍 Haritalarda Gör</span>
-                      <span>↗</span>
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Reputation & Google Trust Stats */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="text-amber-500 font-bold text-base">★</span>
-                <span className="font-bold text-slate-900 text-sm">{lead.rating || "—"}</span>
-                <span className="text-slate-400">({lead.review_count || 0} yorum)</span>
-              </div>
-              <div className="text-slate-500 text-[11px]">
-                {lead.contact_attempts ? (
-                  <span className="font-semibold text-slate-700">{lead.contact_attempts} kez arandı</span>
-                ) : (
-                  <span className="text-emerald-700 font-semibold">İlk Arama</span>
-                )}
-              </div>
-            </div>
-
-            {/* Why This Lead is Valuable (Score Reasons) */}
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
-                Öne Çıkan Satış Fırsatları
+      {/* 2. Focused Dual-Column Calling Cockpit */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column (5 Cols): Business Profile, Signals & Score */}
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 sm:p-5.5 shadow-xs space-y-4.5">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md font-mono text-xs font-bold border ${getPriorityStyle(
+                  lead.priority
+                )}`}
+              >
+                🔥 SKOR {lead.lead_score} • {lead.priority}
               </span>
-              <div className="space-y-1.5 text-xs">
-                {lead.score_reasons && lead.score_reasons.length > 0 ? (
-                  lead.score_reasons.slice(0, 3).map((r, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100"
-                    >
-                      <span className="text-slate-700 leading-tight">{r.label}</span>
-                      <span className="font-mono font-bold text-emerald-700 text-[11px] ml-2">
-                        +{r.points}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-2 rounded-lg bg-slate-50 text-slate-500 text-xs">
-                    {lead.website_status === "NO_WEBSITE"
-                      ? "Aktif web sitesi bulunmuyor; yüksek ticari potansiyel."
-                      : "Web sitesi incelendi; iyileştirme adayı."}
-                  </div>
-                )}
-              </div>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${
+                  lead.website_status === "NO_WEBSITE"
+                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                    : lead.website_status === "HAS_WEBSITE"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    lead.website_status === "NO_WEBSITE"
+                      ? "bg-rose-500"
+                      : lead.website_status === "HAS_WEBSITE"
+                      ? "bg-emerald-500"
+                      : "bg-amber-500"
+                  }`}
+                ></span>
+                {lead.website_status === "NO_WEBSITE"
+                  ? "Web Sitesi Yok"
+                  : lead.website_status === "HAS_WEBSITE"
+                  ? "Web Sitesi Var"
+                  : "Erişilemez"}
+              </span>
             </div>
 
-            {lead.website && (
-              <div className="text-xs pt-1">
-                <span className="text-slate-400 mr-2">Mevcut Site:</span>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-950 tracking-tight leading-snug">
+              {lead.name}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium mt-2.5">
+              <span className="text-slate-800 font-semibold">{lead.category || "Genel Ticari"}</span>
+              <span>•</span>
+              <span>
+                {lead.city || "İstanbul"}
+                {lead.district ? ` (${lead.district})` : ""}
+              </span>
+              {lead.google_maps_url && (
+                <>
+                  <span>•</span>
+                  <a
+                    href={lead.google_maps_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-0.5 hover:underline"
+                  >
+                    <span>Google Haritalar</span>
+                    <span className="font-mono text-[11px]">↗</span>
+                  </a>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Reputation & Stats */}
+          <div className="bg-slate-50/80 border border-slate-200/90 rounded-lg p-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-500 text-base">★</span>
+              <span className="font-mono font-bold text-sm text-slate-950">{lead.rating || "—"}</span>
+              <span className="text-xs text-slate-500">({lead.review_count || 0} yorum)</span>
+            </div>
+            <div className="text-xs font-semibold text-slate-600">
+              {lead.contact_attempts ? `${lead.contact_attempts} kez arandı` : "İlk Arama"}
+            </div>
+          </div>
+
+          {/* Why This Lead is Valuable (Score Reasons) */}
+          <div className="space-y-2.5">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+              Tespit Edilen Fırsatlar
+            </span>
+            <div className="space-y-2">
+              {lead.score_reasons && lead.score_reasons.length > 0 ? (
+                lead.score_reasons.slice(0, 4).map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200/70 text-xs"
+                  >
+                    <span className="text-slate-800 font-medium">{r.label}</span>
+                    <span className="font-mono font-bold text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded text-xs ml-2">
+                      +{r.points}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="px-3.5 py-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-500">
+                  {lead.website_status === "NO_WEBSITE"
+                    ? "Aktif web sitesi bulunmuyor; doğrudan yeni site teklifi yapılabilir."
+                    : "Web sitesi incelendi."}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {lead.website && (
+            <div className="text-xs text-slate-500 flex items-center gap-1.5 pt-2 border-t border-slate-100">
+              <span>Mevcut Site:</span>
+              <a
+                href={lead.website}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-blue-600 hover:underline truncate max-w-[260px]"
+              >
+                {lead.website_domain || lead.website} ↗
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column (7 Cols): Sales Hook Pitch + Phone Trigger + 1-Click Action Bar */}
+        <div className="lg:col-span-7 space-y-3.5">
+          {/* Card 1: Sales Opening Script (Teleprompter style) */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🎙️</span> Satış Açılış Metni
+              </span>
+              <button
+                type="button"
+                onClick={copyPitch}
+                className="h-7 px-3 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1 shadow-2xs"
+              >
+                <span>{copiedPitch ? "✓" : "📋"}</span>
+                <span>{copiedPitch ? "Kopyalandı" : "Metni Kopyala"}</span>
+              </button>
+            </div>
+            <p className="text-sm font-medium text-slate-800 leading-relaxed bg-slate-50/70 border-l-2 border-blue-600 rounded-r-lg p-3">
+              &ldquo;{pitchText}&rdquo;
+            </p>
+          </div>
+
+          {/* Card 2: The Direct Contact & Call Terminal */}
+          <div className="bg-slate-950 text-white rounded-xl p-4 sm:p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase tracking-widest font-mono text-slate-400 font-semibold flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Doğrudan İletişim Hattı
+              </span>
+              <span className="text-xs text-slate-400 font-mono">Türkiye (+90)</span>
+            </div>
+
+            {/* Phone Number: Guaranteed 1 line, bold, zero overflow */}
+            <div className="font-mono text-3xl sm:text-4xl font-extrabold text-white tracking-tight select-all leading-none">
+              {rawPhone || "Telefon Kaydı Yok"}
+            </div>
+
+            {/* 3 Action Buttons in an equal 3-column grid */}
+            {rawPhone && (
+              <div className="grid grid-cols-3 gap-2.5 pt-1">
+                {/* Hemen Ara */}
                 <a
-                  href={lead.website}
+                  href={`tel:${normalizedPhone}`}
+                  className="h-11 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-950 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                  title="Telefon uygulamasını başlat"
+                >
+                  <span className="text-base">📞</span>
+                  <span>Ara</span>
+                </a>
+
+                {/* Kopyala */}
+                <button
+                  type="button"
+                  onClick={copyPhone}
+                  className="h-11 bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2 border border-slate-700 transition shadow-xs"
+                  title="Numarayı panoya kopyala"
+                >
+                  <span>{copiedPhone ? "✓" : "📋"}</span>
+                  <span>{copiedPhone ? "Kopyalandı" : "Kopyala"}</span>
+                </button>
+
+                {/* WhatsApp */}
+                <a
+                  href={`https://wa.me/${waPhone}?text=${encodeURIComponent(getWhatsAppMessage())}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-emerald-600 hover:underline font-mono truncate inline-block max-w-[240px] align-bottom"
+                  className="h-11 bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                  title="Hazır Türkçe satış mesajı ile WhatsApp sohbetini aç"
                 >
-                  {lead.website_domain || lead.website}
+                  <span className="text-base">💬</span>
+                  <span>WhatsApp</span>
                 </a>
               </div>
             )}
           </div>
 
-          {/* Right Column (7 Cols): Sales Hook Pitch + Phone Trigger + 1-Click Action Bar */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
-            {/* Sales Opening Script */}
-            <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 text-xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <span>📞</span> Doğrudan Kullanılacak Satış Açılışı
+          {/* Card 3: 1-Click Fast Outcome Logger (Auto-Advances to Next Lead) */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Sonucu Kaydet & Sıradakine Geç
+              </span>
+              {feedback && (
+                <span className="text-xs font-semibold text-blue-600 animate-pulse">
+                  {feedback}
                 </span>
-                <button
-                  type="button"
-                  onClick={copyPitch}
-                  className="bg-white border border-emerald-200 hover:bg-emerald-100 text-emerald-800 text-[11px] font-semibold px-2.5 py-0.5 rounded shadow-2xs transition"
-                >
-                  {copiedPitch ? "Kopyalandı ✓" : "Metni Kopyala"}
-                </button>
-              </div>
-              <p className="text-slate-800 leading-relaxed font-medium bg-white/80 border border-emerald-200/60 rounded-lg p-3 text-xs">
-                &ldquo;{pitchText}&rdquo;
-              </p>
-            </div>
-
-            {/* Direct Phone & WhatsApp Communication Bar */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Doğrudan İletişim Hattı
-                </span>
-                <div className="text-xl font-bold font-mono text-slate-900 tracking-tight mt-0.5">
-                  {rawPhone || "Telefon Kaydı Bulunamadı"}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {rawPhone && (
-                  <>
-                    <a
-                      href={`tel:${normalizedPhone}`}
-                      className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition"
-                    >
-                      <span>📞 Hemen Ara</span>
-                    </a>
-                    <button
-                      type="button"
-                      onClick={copyPhone}
-                      className="px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-medium transition"
-                    >
-                      {copiedPhone ? "Kopyalandı!" : "Kopyala"}
-                    </button>
-                    <a
-                      href={`https://wa.me/${waPhone}?text=${encodeURIComponent(getWhatsAppMessage())}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold shadow-xs transition"
-                      title="Hazır Türkçe satış mesajını WhatsApp Web üzerinden başlatır"
-                    >
-                      <span>💬 WhatsApp</span>
-                    </a>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* 1-Click Fast Outcome Logger (Auto-Advances to Next Lead) */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                  Sonucu Kaydet & Sıradakine Geç (Tek Tık)
-                </span>
-                {feedback && <span className="text-xs text-emerald-600 font-semibold">{feedback}</span>}
-              </div>
-
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={() => handleOutcome("no_answer", "Cevap yok / meşgul.")}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-semibold transition active:scale-95 disabled:opacity-50"
-                  title="Arama denemesini kaydeder ve hemen sıradaki adayı açar"
-                >
-                  <span className="text-base mb-0.5">📵</span>
-                  <span>Cevap Yok</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={() => setShowFollowUpBox(!showFollowUpBox)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs font-semibold transition active:scale-95 ${
-                    showFollowUpBox
-                      ? "border-amber-400 bg-amber-50 text-amber-900"
-                      : "border-amber-200 bg-amber-50/50 hover:bg-amber-100 text-amber-900"
-                  }`}
-                >
-                  <span className="text-base mb-0.5">⏰</span>
-                  <span>Geri Ara</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={() => handleOutcome("interested", "Görüşme olumlu, randevu veya detay istendi.")}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold transition active:scale-95"
-                >
-                  <span className="text-base mb-0.5">🔥</span>
-                  <span>İlgilendi</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={() => handleOutcome("rejected", "Web sitesi istemiyor.")}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-800 text-xs font-semibold transition active:scale-95"
-                >
-                  <span className="text-base mb-0.5">❌</span>
-                  <span>Red</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={handleSkip}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium transition active:scale-95"
-                  title="Durumu değiştirmeden sıradaki adaya geçer"
-                >
-                  <span className="text-base mb-0.5">⏭️</span>
-                  <span>Atla</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isProcessing}
-                  onClick={() => setShowExcludeBox(!showExcludeBox)}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 text-xs font-medium transition active:scale-95"
-                >
-                  <span className="text-base mb-0.5">🚫</span>
-                  <span>Dışla</span>
-                </button>
-              </div>
-
-              {/* Expandable Follow-Up Quick Presets */}
-              {showFollowUpBox && (
-                <div className="mt-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-2 animate-in fade-in duration-150">
-                  <span className="font-bold text-amber-900 block">
-                    Geri arama zamanı seçin (seçtiğiniz an sıradakine geçer):
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFollowUp("2h")}
-                      className="px-3 py-1.5 rounded bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-semibold"
-                    >
-                      +2 Saat Sonra
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFollowUp("tomorrow")}
-                      className="px-3 py-1.5 rounded bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-semibold"
-                    >
-                      Yarın Sabah (10:00)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFollowUp("monday")}
-                      className="px-3 py-1.5 rounded bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 font-semibold"
-                    >
-                      Pazartesi (10:00)
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Expandable Exclude Reasons */}
-              {showExcludeBox && (
-                <div className="mt-2.5 p-3 bg-slate-100 border border-slate-300 rounded-lg text-xs space-y-2 animate-in fade-in duration-150">
-                  <span className="font-bold text-slate-800 block">Dışlama sebebi:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {EXCLUSION_REASONS.map((r) => (
-                      <button
-                        key={r.value}
-                        type="button"
-                        onClick={() => handleExclude(r.value)}
-                        className="px-2.5 py-1 rounded bg-white border border-slate-300 hover:bg-slate-200 text-slate-700 text-[11px] font-medium"
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               )}
             </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {/* Cevap Yok */}
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => handleOutcome("no_answer", "Cevap yok / meşgul.")}
+                className="h-16 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] disabled:opacity-50 shadow-2xs"
+                title="Arama denemesini kaydeder ve sıradaki adaya geçer"
+              >
+                <span className="text-lg">📵</span>
+                <span className="text-xs font-semibold">Cevap Yok</span>
+              </button>
+
+              {/* Geri Ara */}
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => setShowFollowUpBox(!showFollowUpBox)}
+                className={`h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] ${
+                  showFollowUpBox
+                    ? "border-amber-500 bg-amber-50 text-amber-950 font-bold shadow-xs"
+                    : "border-slate-200 bg-white hover:bg-amber-50/40 text-slate-800 shadow-2xs"
+                }`}
+              >
+                <span className="text-lg">⏰</span>
+                <span className="text-xs font-semibold">Geri Ara</span>
+              </button>
+
+              {/* İlgilendi (The Hero Outcome!) */}
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() =>
+                  handleOutcome("interested", "Görüşme olumlu, randevu veya detay istendi.")
+                }
+                className="h-16 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] shadow-sm font-bold"
+              >
+                <span className="text-lg">🔥</span>
+                <span className="text-xs">İlgilendi</span>
+              </button>
+
+              {/* Red */}
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => handleOutcome("rejected", "Web sitesi istemiyor.")}
+                className="h-16 rounded-lg border border-slate-200 bg-white hover:bg-rose-50/40 text-slate-800 transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] shadow-2xs"
+              >
+                <span className="text-lg">❌</span>
+                <span className="text-xs font-semibold">Red</span>
+              </button>
+
+              {/* Atla */}
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={handleSkip}
+                className="h-16 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] shadow-2xs"
+                title="Durumu değiştirmeden sıradaki adaya geçer"
+              >
+                <span className="text-lg">⏭️</span>
+                <span className="text-xs font-semibold">Atla</span>
+              </button>
+
+              {/* Dışla */}
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={() => setShowExcludeBox(!showExcludeBox)}
+                className={`h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] ${
+                  showExcludeBox
+                    ? "border-slate-800 bg-slate-100 text-slate-950 font-bold"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-500 shadow-2xs"
+                }`}
+              >
+                <span className="text-lg">🚫</span>
+                <span className="text-xs font-semibold">Dışla</span>
+              </button>
+            </div>
+
+            {/* Expandable Follow-Up Quick Presets */}
+            {showFollowUpBox && (
+              <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2 animate-in fade-in duration-150">
+                <span className="text-xs font-semibold text-amber-950 block">
+                  Geri arama zamanı seçin (tek tıkla sıradakine geçer):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFollowUp("2h")}
+                    className="h-9 px-3.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 text-xs font-semibold transition"
+                  >
+                    +2 Saat Sonra
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFollowUp("tomorrow")}
+                    className="h-9 px-3.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 text-xs font-semibold transition"
+                  >
+                    Yarın Sabah (10:00)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFollowUp("monday")}
+                    className="h-9 px-3.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-950 text-xs font-semibold transition"
+                  >
+                    Pazartesi (10:00)
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Expandable Exclude Reasons */}
+            {showExcludeBox && (
+              <div className="p-3.5 bg-slate-100 border border-slate-200 rounded-xl space-y-2 animate-in fade-in duration-150">
+                <span className="text-xs font-semibold text-slate-900 block">
+                  Dışlama sebebi seçin:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {EXCLUSION_REASONS.map((r) => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => handleExclude(r.value)}
+                      className="h-8 px-3 rounded-lg bg-white border border-slate-300 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition"
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
+
 }

@@ -64,21 +64,21 @@ export function WebsiteIntelligenceCard({
   const deepData = audit?.deep_audit_data;
 
   return (
-    <div className="border border-slate-200 bg-white rounded-xl p-6 mb-6 shadow-sm">
+    <div className="bg-white rounded-2xl border border-slate-200/90 p-6 mb-6 shadow-xs">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4 mb-5">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-slate-900 tracking-wide uppercase">
+            <h2 className="text-xs font-mono font-bold tracking-widest text-slate-400 uppercase">
               Web Sitesi Satış İstihbaratı
             </h2>
             {audit && (
-              <span className="text-[10px] bg-slate-100 text-slate-600 font-mono px-2 py-0.5 rounded border border-slate-200">
+              <span className="text-[10px] bg-slate-100 text-slate-700 font-mono px-2 py-0.5 rounded-md border border-slate-200 font-semibold">
                 {audit.audit_type === "deep" ? "Kapsamlı Satış Analizi" : "Hızlı Tarama"}
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-1">
             {hasWebsite
               ? `Hedef: ${business.website}`
               : "Bu işletmenin kayıtlı bir web sitesi bulunmuyor."}
@@ -87,11 +87,11 @@ export function WebsiteIntelligenceCard({
 
         {/* Action Buttons */}
         {hasWebsite && (
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               onClick={handleLightweightScan}
               disabled={isScanning || isDeepAuditing}
-              className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="h-9 px-3.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition shadow-2xs disabled:opacity-50 flex items-center gap-1.5"
             >
               {isScanning ? (
                 <>
@@ -105,7 +105,7 @@ export function WebsiteIntelligenceCard({
             <button
               onClick={handleDeepAudit}
               disabled={isScanning || isDeepAuditing}
-              className="px-3 py-1.5 bg-emerald-600 border border-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+              className="h-9 px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition shadow-xs disabled:opacity-50 flex items-center gap-1.5"
             >
               {isDeepAuditing ? (
                 <>
@@ -123,7 +123,7 @@ export function WebsiteIntelligenceCard({
       {/* Feedback Message */}
       {feedback && (
         <div
-          className={`mb-4 p-3 rounded-lg text-xs border ${
+          className={`mb-4 p-3 rounded-xl text-xs border ${
             feedback.type === "success"
               ? "bg-emerald-50 text-emerald-800 border-emerald-200"
               : "bg-rose-50 text-rose-800 border-rose-200"
@@ -135,32 +135,32 @@ export function WebsiteIntelligenceCard({
 
       {/* Content */}
       {!hasWebsite ? (
-        <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5 text-xs text-amber-900 space-y-2">
+        <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-5 text-xs text-amber-900 space-y-3">
           <div className="flex items-center gap-2 font-bold text-sm text-amber-950">
             <span>🎯</span> Doğrudan Satış Fırsatı: Web Sitesi Yok
           </div>
-          <p className="text-slate-700 leading-relaxed">
+          <p className="text-slate-700 leading-relaxed font-normal">
             İşletmenin Google profilinde web sitesi kayıtlı değil. Yerel aramalardan gelen müşterileri
             doğrudan rakiplerine kaptırıyor.
           </p>
-          <div className="bg-white/80 border border-amber-200 rounded-lg p-3 text-xs text-slate-800 font-medium">
-            <strong>Önerilen Açılış Cümlesi:</strong> &ldquo;Hocam merhaba, Google Haritalar profilinizde
+          <div className="bg-white/90 border border-amber-200 rounded-xl p-3.5 text-xs text-slate-800 font-medium leading-relaxed">
+            <strong className="text-amber-950 block mb-1">Önerilen Açılış Cümlesi:</strong> &ldquo;Hocam merhaba, Google Haritalar profilinizde
             {business.review_count ? ` ${business.review_count} yorumunuz ve` : ""} yüksek puanınız var
             ancak müşterilerin detayları ve randevuyu inceleyebileceği bir web siteniz bulunmuyor. Bu
             kaybı önlemek için Yaytech olarak işletmenize özel profesyonel bir web sitesi kuralım.&rdquo;
           </div>
         </div>
       ) : !audit ? (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center text-xs">
-          <p className="text-slate-600 font-medium mb-1">Web Sitesi Taraması Henüz Yapılmadı</p>
-          <p className="text-slate-500 mb-4 max-w-md mx-auto">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center text-xs">
+          <p className="text-slate-700 font-bold text-sm mb-1">Web Sitesi Taraması Henüz Yapılmadı</p>
+          <p className="text-slate-500 mb-4 max-w-md mx-auto text-xs">
             İşletmenin web sitesi hızını, mobil uyumunu ve soğuk arama satış açılışını oluşturmak için
             yukarıdaki butonlardan birine basın.
           </p>
           <button
             onClick={handleLightweightScan}
             disabled={isScanning || isDeepAuditing}
-            className="px-4 py-2 bg-slate-900 text-white text-xs font-medium rounded-lg hover:bg-slate-800 transition"
+            className="h-9 px-4 bg-slate-950 text-white text-xs font-semibold rounded-xl hover:bg-slate-800 transition shadow-xs"
           >
             Hızlı Taramayı Çalıştır
           </button>
@@ -170,10 +170,10 @@ export function WebsiteIntelligenceCard({
           {/* Key Sales Signals Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
             {/* Reachability */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <span className="text-slate-500 block text-[11px] mb-1">Durum</span>
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
+              <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block mb-1">Durum</span>
               <span
-                className={`font-semibold inline-flex items-center gap-1 ${
+                className={`font-semibold inline-flex items-center gap-1.5 ${
                   audit.status === "success"
                     ? "text-emerald-700"
                     : audit.status === "timeout"
@@ -201,10 +201,10 @@ export function WebsiteIntelligenceCard({
             </div>
 
             {/* Load Speed */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <span className="text-slate-500 block text-[11px] mb-1">Yükleme Hızı</span>
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
+              <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block mb-1">Yükleme Hızı</span>
               <span
-                className={`font-semibold ${
+                className={`font-mono font-bold ${
                   (audit.response_time_ms || 0) > 1500
                     ? "text-rose-600"
                     : (audit.response_time_ms || 0) > 800
@@ -217,8 +217,8 @@ export function WebsiteIntelligenceCard({
             </div>
 
             {/* Mobile Viewport */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <span className="text-slate-500 block text-[11px] mb-1">Mobil Uyum</span>
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
+              <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block mb-1">Mobil Uyum</span>
               <span
                 className={`font-semibold ${
                   audit.has_viewport ? "text-emerald-700" : "text-rose-600"
@@ -229,8 +229,8 @@ export function WebsiteIntelligenceCard({
             </div>
 
             {/* WhatsApp */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <span className="text-slate-500 block text-[11px] mb-1">Hızlı WhatsApp</span>
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
+              <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block mb-1">Hızlı WhatsApp</span>
               <span
                 className={`font-semibold ${
                   deepData?.hasWhatsApp ? "text-emerald-700" : "text-rose-600"
@@ -241,8 +241,8 @@ export function WebsiteIntelligenceCard({
             </div>
 
             {/* SSL Warning */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <span className="text-slate-500 block text-[11px] mb-1">Güvenlik</span>
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
+              <span className="text-slate-400 font-mono text-[10px] uppercase tracking-wider block mb-1">Güvenlik</span>
               <span
                 className={`font-semibold ${
                   audit.is_https ? "text-emerald-700" : "text-rose-600"
@@ -255,19 +255,19 @@ export function WebsiteIntelligenceCard({
 
           {/* Tailored Cold-Call Pitch Card */}
           {deepData?.salesPitch && (
-            <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-5 text-xs text-slate-800 space-y-3">
+            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 text-xs text-slate-800 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wider flex items-center gap-2">
+                <h4 className="text-xs font-mono font-bold text-blue-950 uppercase tracking-wider flex items-center gap-2">
                   <span>📞</span> Aramada Kullanılacak Satış Açılışı
                 </h4>
                 <button
                   onClick={() => handleCopyPitch(deepData.salesPitch)}
-                  className="text-[11px] font-medium text-emerald-700 hover:text-emerald-900 bg-white border border-emerald-200 px-2.5 py-1 rounded-md shadow-2xs"
+                  className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-white border border-blue-200 px-2.5 py-1 rounded-lg shadow-2xs transition"
                 >
                   {copiedPitch ? "Kopyalandı ✓" : "Metni Kopyala"}
                 </button>
               </div>
-              <p className="text-slate-800 leading-relaxed font-medium bg-white/70 border border-emerald-200/60 rounded-lg p-3">
+              <p className="text-slate-800 leading-relaxed font-medium bg-white border border-blue-100/80 rounded-xl p-3.5 shadow-2xs">
                 &ldquo;{deepData.salesPitch}&rdquo;
               </p>
 
@@ -276,9 +276,9 @@ export function WebsiteIntelligenceCard({
                   <span className="text-[11px] font-semibold text-slate-700 uppercase tracking-wide block">
                     Müşteriye Sunulacak Net Sorunlar:
                   </span>
-                  <ul className="space-y-1 text-slate-700">
+                  <ul className="space-y-1.5 text-slate-700">
                     {deepData.problems.map((prob, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
+                      <li key={idx} className="flex items-start gap-2">
                         <span className="text-rose-600 font-bold">✕</span>
                         <span>{prob}</span>
                       </li>
@@ -292,8 +292,8 @@ export function WebsiteIntelligenceCard({
           {/* Infrastructure & Contacts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {/* Tech Stack */}
-            <div className="border border-slate-200 rounded-lg p-4 space-y-2">
-              <h4 className="font-semibold text-slate-800 text-xs uppercase tracking-wider">
+            <div className="border border-slate-200/80 rounded-xl p-4 space-y-2">
+              <h4 className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">
                 Web Sitesi Altyapısı
               </h4>
               {audit.technologies && audit.technologies.length > 0 ? (
@@ -301,7 +301,7 @@ export function WebsiteIntelligenceCard({
                   {audit.technologies.map((tech) => (
                     <span
                       key={tech}
-                      className="bg-slate-100 border border-slate-200 text-slate-800 px-2 py-0.5 rounded text-[11px] font-medium"
+                      className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded-md text-[11px] font-medium"
                     >
                       {tech}
                     </span>
@@ -313,8 +313,8 @@ export function WebsiteIntelligenceCard({
             </div>
 
             {/* Extracted Contacts */}
-            <div className="border border-slate-200 rounded-lg p-4 space-y-2">
-              <h4 className="font-semibold text-slate-800 text-xs uppercase tracking-wider">
+            <div className="border border-slate-200/80 rounded-xl p-4 space-y-2">
+              <h4 className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">
                 Siteden Çıkarılan İletişim Kanalları
               </h4>
               <div className="space-y-1.5">

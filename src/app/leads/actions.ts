@@ -106,6 +106,9 @@ export async function logCallAction(params: {
   notes?: string | null;
   followUpDate?: string | null;
   customStatus?: import("@/types/crm").CrmStatus;
+  currentAttempts?: number;
+  currentStatus?: string;
+  queueFilter?: { category?: string; district?: string };
 }) {
   try {
     const { logCallInteraction } = await import("@/services/crm-service");
@@ -115,7 +118,7 @@ export async function logCallAction(params: {
     return res;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    return { success: false, nextStatus: "NEW" as const, error: message };
+    return { success: false, nextStatus: "NEW" as const, nextLeadId: null, error: message };
   }
 }
 
@@ -164,16 +167,20 @@ export async function saveLeadNoteAction(businessId: string, noteText: string) {
   }
 }
 
-export async function getNextLeadAction(currentLeadId: string) {
+export async function getNextLeadAction(
+  currentLeadId: string,
+  options?: { category?: string; district?: string }
+) {
   try {
     const { getNextLeadId } = await import("@/services/crm-service");
-    const nextId = await getNextLeadId(currentLeadId);
+    const nextId = await getNextLeadId(currentLeadId, options);
     return { success: true, nextId };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return { success: false, error: message, nextId: null };
   }
 }
+
 
 
 

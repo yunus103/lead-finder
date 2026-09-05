@@ -36,13 +36,13 @@ Do not duplicate detailed information across documents.
 
 **Status:** In Progress
  
-**Current Phase:** Phase 08 — Calling Queue
+**Current Phase:** Phase 09 — Search Provider
  
-**Current Step:** Step 08 — Calling Queue
+**Current Step:** Step 09 — Search Provider
  
 **Next Document:**
  
-`/docs/implementation/08-calling-queue.md`
+`/docs/implementation/09-search-provider.md`
 
 ---
 

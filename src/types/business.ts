@@ -26,6 +26,7 @@ export interface Business {
   last_contacted_at?: string | null;
   next_follow_up_at?: string | null;
   notes?: string | null;
+  google_maps_url?: string | null;
   score_reasons?: import("./scoring").ScoreReason[];
   last_scanned_at?: string | null;
   created_at: string;

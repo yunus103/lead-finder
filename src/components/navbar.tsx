@@ -28,6 +28,13 @@ export function Navbar() {
             >
               İşletmeler
             </Link>
+            <Link
+              href="/queue"
+              className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1.5"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Arama Sırası</span>
+            </Link>
           </nav>
         </div>
         <div className="flex items-center space-x-2 text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">

@@ -1,7 +1,10 @@
 # Step 09 — Search Provider
 
 **Phase:** 09 — Search Provider  
-**Status:** TODO
+**Status:** DEFERRED
+
+## Status Note
+Deferred per architectural decision (`docs/architecture/decisions.md`). Google Places API (New) provides 100% structured data (phones, ratings, websites, maps URIs) without search engine anti-bot fragility or paid SERP scraping API costs. High-intent local leads are discovered more reliably via Google Maps.
 
 ## Objective
 

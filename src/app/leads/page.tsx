@@ -390,13 +390,26 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
                       {/* 7. Action */}
                       <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                        <Link
-                          href={`/leads/${b.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition"
-                        >
-                          <span>Kokpiti Aç</span>
-                          <span>→</span>
-                        </Link>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {!b.is_excluded && b.crm_status !== "WON" && b.crm_status !== "LOST" && (
+                            <Link
+                              href={`/queue?leadId=${b.id}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-semibold shadow-xs transition"
+                              title="Arama Sırasında Hemen Ara"
+                            >
+                              <span>📞</span>
+                              <span>Ara</span>
+                            </Link>
+                          )}
+                          <Link
+                            href={`/leads/${b.id}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium transition"
+                            title="İşletme Detay & CRM Kokpiti"
+                          >
+                            <span>Kokpit</span>
+                            <span>→</span>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -18,7 +18,7 @@ export default async function DiscoverPage() {
           Potansiyel Müşteri Keşfi
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Google Haritalar, Google Arama ve Instagram kaynaklarını birleştirerek yeni işletmeler keşfedin.
+          Google Haritalar üzerinden yüksek potansiyelli yerel işletmeleri keşfedin ve arama sırasına aktarın.
         </p>
       </div>
 

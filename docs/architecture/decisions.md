@@ -123,3 +123,20 @@ For solo cold-calling, manual 10-status dropdowns, modal navigation, and complex
 **Alternatives:**  
 - Full relational list architecture: Adds unnecessary join tables and CRUD interfaces that don't add value for a solo operator.
 - Manual dropdown-driven status management: Requires 3-4 clicks per call attempt, slowing down high-volume calling sessions.
+
+---
+
+### Deferral of Automated Search & Instagram Providers in Favor of Google Maps & Lightweight Link Enrichment
+
+**Status:** Accepted  
+**Date:** 2026-09-05
+
+**Decision:**  
+Defer separate programmatic discovery and scraping providers for Google Search (Phase 09) and Instagram (Phase 10). Google Places API (New) serves as the primary discovery engine providing high-quality, structured local business data (names, verified phones, addresses, ratings, websites, and direct Maps URLs) with zero bot-detection fragility. Social media handles (such as Instagram) discovered during website intelligence scans or available from Google Maps are enriched directly into canonical business records. Direct links (`[ 📍 Haritalarda Gör ↗ ]`, Instagram URL) are surfaced in the calling cockpit for fast human verification prior to dialing.
+
+**Reason:**  
+For Turkish local business prospecting and solo cold-calling, Google Maps represents 95%+ of active local commerce. Automated Google Search and Instagram scraping introduces severe anti-bot challenges (CAPTCHAs, login walls, IP bans), high latency, and unstructured noise. A solo operator gains significantly higher conversion velocity by calling structured Google Maps leads directly rather than investing development and maintenance time into brittle scraping pipelines.
+
+**Alternatives:**  
+- Third-party SERP & Social APIs (e.g. SerpAPI, Apify): Adds recurring subscription overhead and per-request costs without materially improving local lead reach or phone accuracy.
+- Custom Headless Scrapers (Puppeteer/Playwright): Excluded due to resource footprint, maintenance burden, and aggressive bot mitigation.

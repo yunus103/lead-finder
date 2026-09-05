@@ -1,7 +1,10 @@
 # Step 10 — Instagram Provider
 
 **Phase:** 10 — Instagram Provider  
-**Status:** TODO
+**Status:** DEFERRED
+
+## Status Note
+Deferred per architectural decision (`docs/architecture/decisions.md`). Automated Instagram scraping and profile extraction is blocked by strict login walls, IP blocking, and bot mitigation. Organic social handle enrichment during lightweight website scans, combined with direct links to Instagram/Google Maps on the lead cockpit, fulfills operator verification without brittle scraping scrapers.
 
 ## Objective
 

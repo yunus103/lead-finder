@@ -36,13 +36,13 @@ Do not duplicate detailed information across documents.
 
 **Status:** In Progress
  
-**Current Phase:** Phase 09 — Search Provider
+**Current Phase:** Phase 12 — V1 Validation & Release
  
-**Current Step:** Step 09 — Search Provider
+**Current Step:** Step 12 — V1 Validation & Release
  
 **Next Document:**
  
-`/docs/implementation/09-search-provider.md`
+`/docs/implementation/12-v1-validation-release.md`
 
 ---
 
@@ -80,13 +80,13 @@ Lead statuses, contact tracking, notes, interactions, and activity history.
 
 Prioritized calling workflow, follow-ups, call actions, and next-lead flow.
 
-## 09 — Search Provider
+## 09 — Search Provider (DEFERRED)
 
-Google Search discovery and enrichment integration.
+Google Search discovery and enrichment integration (deferred per architectural decision; Google Maps prioritized).
 
-## 10 — Instagram Provider
+## 10 — Instagram Provider (DEFERRED)
 
-Instagram discovery and enrichment integration using the selected compliant provider/method.
+Instagram discovery and enrichment integration (deferred per architectural decision; organic links prioritized).
 
 ## 11 — Dashboard & UX
 
@@ -205,11 +205,11 @@ V1 is complete when:
 ---
 
 # Current Next Step
-
-**Phase 07 — CRM**
-
-**Step 07 — CRM**
-
+ 
+**Phase 12 — V1 Validation & Release**
+ 
+**Step 12 — V1 Validation & Release**
+ 
 Detailed instructions:
-
-`/docs/implementation/07-crm.md`
+ 
+`/docs/implementation/12-v1-validation-release.md`

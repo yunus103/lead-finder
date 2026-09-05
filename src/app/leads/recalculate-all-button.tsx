@@ -30,15 +30,15 @@ export function RecalculateAllButton() {
       <button
         onClick={handleClick}
         disabled={isPending}
-        className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium rounded-lg transition shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+        className="h-10 px-4 bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 hover:text-slate-950 text-xs font-bold rounded-xl transition shadow-xs disabled:opacity-50 inline-flex items-center gap-2"
       >
         {isPending ? (
           <>
-            <span className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+            <span className="inline-block w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
             Yenileniyor...
           </>
         ) : (
-          "Tüm Skorları Güncelle"
+          "⚡ Skorları Güncelle"
         )}
       </button>
     </div>

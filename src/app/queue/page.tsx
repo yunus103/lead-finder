@@ -18,12 +18,12 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   const district = params.district || undefined;
   const leadId = params.leadId || undefined;
 
-  const [lead, meta] = await Promise.all([
+  const [queueItem, meta] = await Promise.all([
     getQueueLead(leadId, { category, district }),
     getQueueMeta({ category, district }),
   ]);
 
-  if (!lead) {
+  if (!queueItem) {
     return (
       <main className="max-w-2xl mx-auto px-4 py-16 text-center">
         <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 mx-auto flex items-center justify-center text-2xl mb-4">
@@ -67,8 +67,9 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
   return (
     <main className="py-2">
       <QueueDialer
-        key={lead.id}
-        lead={lead}
+        key={queueItem.lead.id}
+        lead={queueItem.lead}
+        latestAudit={queueItem.audit}
         meta={meta}
         activeCategory={category}
         activeDistrict={district}

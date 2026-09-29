@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Business } from "@/types/business";
+import { WebsiteAudit } from "@/types/website";
+import { buildCallPitch, buildWhatsAppMessage, getPhoneInfo, PHONE_TYPE_LABEL } from "@/lib/outreach";
+import { WhatsAppComposer } from "@/components/whatsapp-composer";
 import { CallOutcome, ExclusionReason, EXCLUSION_REASONS } from "@/types/crm";
 import {
   logCallAction,
@@ -13,6 +16,7 @@ import {
 
 interface QueueDialerProps {
   lead: Business;
+  latestAudit: WebsiteAudit | null;
   meta: {
     remainingCount: number;
     categories: string[];
@@ -24,6 +28,7 @@ interface QueueDialerProps {
 
 export function QueueDialer({
   lead,
+  latestAudit,
   meta,
   activeCategory,
   activeDistrict,
@@ -36,40 +41,13 @@ export function QueueDialer({
   const [showFollowUpBox, setShowFollowUpBox] = useState(false);
   const [showExcludeBox, setShowExcludeBox] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
 
-  // Phone number normalization
   const rawPhone = lead.phone || "";
-  const normalizedPhone = lead.phone_normalized || rawPhone.replace(/\D/g, "");
-
-  let waPhone = normalizedPhone;
-  if (waPhone.startsWith("0")) {
-    waPhone = "9" + waPhone;
-  } else if (!waPhone.startsWith("90") && waPhone.length === 10) {
-    waPhone = "90" + waPhone;
-  }
-
-  // Generate dynamic sales pitch based on lead signals
-  const getSalesPitch = () => {
-    const bizName = lead.name || "İşletme Yetkilisi";
-    if (lead.website_status === "NO_WEBSITE") {
-      return `Merhabalar, Google Haritalar'daki işletme profilinizi ve müşteri yorumlarınızı inceledim; ${lead.district ? `${lead.district} bölgesinde` : "bölgenizde"} oldukça iyi bir bilinirliğiniz var ancak aktif bir web siteniz bulunmuyor. Google'da sizi arayan potansiyel hastaların/müşterilerin doğrudan randevu alabileceği mobil uyumlu ve WhatsApp entegreli modern bir web altyapısı için hızlı bir teklif hazırladık.`;
-    }
-    if (lead.website_status === "UNREACHABLE") {
-      return `Merhabalar, Google Haritalar profilinizdeki web sitesi bağlantısını kontrol ettiğimde sitenizin açılmadığını ve hata verdiğini fark ettim. Reklam ve haritalardan gelen müşterilerinizi kaybetmemeniz için sitenizi ayağa kaldıralım.`;
-    }
-    return `Merhabalar, web sitenizi cep telefonundan incelediğimde mobil uyum ve açılış hızında müşterilerin doğrudan iletişime geçmesini zorlaştıran bazı eksikler tespit ettik. Sitenizi modern, hızlı ve tek tıkla WhatsApp randevusu aldıran yeni nesil bir yapıya kavuşturalım.`;
-  };
-
-  const pitchText = getSalesPitch();
-
-  // Generate tailored WhatsApp pre-filled text
-  const getWhatsAppMessage = () => {
-    const bizName = lead.name || "İşletme Yetkilisi";
-    if (lead.website_status === "NO_WEBSITE") {
-      return `Merhabalar ${bizName}, Yaytech Studio'dan ulaşıyorum. Google Haritalar'daki yüksek puanlı profilinizi incelediğimizde henüz aktif bir web sitenizin bulunmadığını gördük. Potansiyel müşterilerinizin doğrudan randevu alabileceği modern bir web altyapısı için teklifimiz hazır: https://yaytech.studio`;
-    }
-    return `Merhabalar ${bizName}, Yaytech Studio'dan ulaşıyorum. Web siteniz üzerinde yaptığımız mobil ve hız analizinde müşterilerin erişimini zorlaştıran birkaç kritik nokta tespit ettik. İyileştirme önerilerimizi iletmek isteriz: https://yaytech.studio`;
-  };
+  const phoneInfo = getPhoneInfo(lead.phone);
+  const telHref = phoneInfo.e164 ? `tel:+${phoneInfo.e164}` : `tel:${rawPhone.replace(/[^\d+]/g, "")}`;
+  const outreachContext = { ...lead, audit: latestAudit };
+  const pitchText = buildCallPitch(outreachContext);
 
   const copyPhone = () => {
     if (!rawPhone) return;
@@ -137,7 +115,8 @@ export function QueueDialer({
       target.setDate(target.getDate() + 1);
       target.setHours(10, 0, 0, 0);
     } else if (preset === "monday") {
-      target.setDate(target.getDate() + 2);
+      const day = target.getDay();
+      target.setDate(target.getDate() + (day === 0 ? 1 : 8 - day));
       target.setHours(10, 0, 0, 0);
     }
     handleOutcome("callback", `Geri aranacak (${target.toLocaleString("tr-TR")})`, target.toISOString());
@@ -333,8 +312,12 @@ export function QueueDialer({
                     className="flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-slate-50 border border-slate-200/70 text-xs"
                   >
                     <span className="text-slate-800 font-medium">{r.label}</span>
-                    <span className="font-mono font-bold text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded text-xs ml-2">
-                      +{r.points}
+                    <span
+                      className={`font-mono font-bold bg-white border px-2 py-0.5 rounded text-xs ml-2 ${
+                        r.points < 0 ? "text-rose-700 border-rose-200" : "text-emerald-700 border-emerald-200"
+                      }`}
+                    >
+                      {r.points > 0 ? `+${r.points}` : r.points}
                     </span>
                   </div>
                 ))
@@ -399,13 +382,27 @@ export function QueueDialer({
             <div className="font-mono text-2xl sm:text-4xl font-extrabold text-white tracking-tight select-all leading-tight truncate">
               {rawPhone || "Telefon Kaydı Yok"}
             </div>
+            {rawPhone && (
+              <div
+                className={`text-xs font-semibold ${
+                  phoneInfo.type === "mobile"
+                    ? "text-emerald-400"
+                    : phoneInfo.type === "corporate"
+                    ? "text-rose-400"
+                    : "text-slate-400"
+                }`}
+              >
+                {PHONE_TYPE_LABEL[phoneInfo.type]}
+                {phoneInfo.type !== "mobile" && " • WhatsApp yok"}
+              </div>
+            )}
 
             {/* 3 Action Buttons in an equal 3-column grid */}
             {rawPhone && (
               <div className="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1">
                 {/* Hemen Ara */}
                 <a
-                  href={`tel:${normalizedPhone}`}
+                  href={telHref}
                   className="h-11 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-950 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition shadow-xs"
                   title="Telefon uygulamasını başlat"
                 >
@@ -425,17 +422,27 @@ export function QueueDialer({
                 </button>
 
                 {/* WhatsApp */}
-                <a
-                  href={`https://wa.me/${waPhone}?text=${encodeURIComponent(getWhatsAppMessage())}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="h-11 bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition shadow-xs"
-                  title="Hazır Türkçe satış mesajı ile WhatsApp sohbetini aç"
+                <button
+                  type="button"
+                  disabled={!phoneInfo.whatsappNumber}
+                  onClick={() => setShowWhatsApp((v) => !v)}
+                  className="h-11 bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 transition shadow-xs disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  title={phoneInfo.whatsappNumber ? "Hazır mesajı düzenleyip WhatsApp'ta aç" : "Sabit hat / kurumsal numara — WhatsApp kullanılamaz"}
                 >
                   <span className="text-sm sm:text-base">💬</span>
                   <span className="truncate">WhatsApp</span>
-                </a>
+                </button>
               </div>
+            )}
+
+            {showWhatsApp && phoneInfo.whatsappNumber && (
+              <WhatsAppComposer
+                businessId={lead.id}
+                whatsappNumber={phoneInfo.whatsappNumber}
+                initialMessage={buildWhatsAppMessage(outreachContext)}
+                onSent={() => setFeedback("WhatsApp mesajı kaydedildi.")}
+                onClose={() => setShowWhatsApp(false)}
+              />
             )}
           </div>
 

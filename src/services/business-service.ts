@@ -280,6 +280,7 @@ export async function getBusinesses(options?: {
   crmStatus?: string;
   isExcluded?: boolean;
   followUpDue?: boolean;
+  mobileOnly?: boolean;
   sortBy?: "score" | "newest";
   limit?: number;
   offset?: number;
@@ -332,6 +333,10 @@ export async function getBusinesses(options?: {
   if (options?.priority) {
     query = query.eq("priority", options.priority);
   }
+  if (options?.mobileOnly) {
+    // normalizePhone stores Turkish mobiles as 905XXXXXXXXX
+    query = query.like("phone_normalized", "905%");
+  }
 
   const limit = options?.limit || 50;
   const offset = options?.offset || 0;
@@ -355,24 +360,17 @@ export async function getBusinessWithSources(id: string): Promise<{
   business: Business;
   sources: BusinessSource[];
 } | null> {
-  const { data: business, error: bError } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("businesses")
-    .select("*")
+    .select("*, business_sources(*)")
     .eq("id", id)
-    .single();
+    .order("created_at", { referencedTable: "business_sources", ascending: false })
+    .maybeSingle();
 
-  if (bError || !business) {
+  if (error || !data) {
     return null;
   }
 
-  const { data: sources } = await supabaseAdmin
-    .from("business_sources")
-    .select("*")
-    .eq("business_id", id)
-    .order("created_at", { ascending: false });
-
-  return {
-    business,
-    sources: sources || [],
-  };
+  const { business_sources, ...business } = data as Business & { business_sources: BusinessSource[] | null };
+  return { business, sources: business_sources || [] };
 }

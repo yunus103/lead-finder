@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Business } from "@/types/business";
+import { WebsiteAudit } from "@/types/website";
+import { buildWhatsAppMessage, getPhoneInfo, PHONE_TYPE_LABEL } from "@/lib/outreach";
+import { WhatsAppComposer } from "@/components/whatsapp-composer";
 import {
   CrmStatus,
   CallOutcome,
@@ -22,9 +25,10 @@ import {
 interface CrmCockpitProps {
   business: Business;
   initialActivities: LeadActivity[];
+  latestAudit: WebsiteAudit | null;
 }
 
-export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
+export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCockpitProps) {
   const router = useRouter();
 
   const [crmStatus, setCrmStatus] = useState<CrmStatus>(
@@ -45,8 +49,10 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
   );
 
   const [activities, setActivities] = useState<LeadActivity[]>(initialActivities);
-  const [noteInput, setNoteInput] = useState("");
+  const [savedNotes, setSavedNotes] = useState(business.notes || "");
+  const [noteInput, setNoteInput] = useState(business.notes || "");
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [isLoggingCall, setIsLoggingCall] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [activePreset, setActivePreset] = useState<string | null>(null);
@@ -55,27 +61,9 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
   const [customDate, setCustomDate] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Phone number normalization for WhatsApp & dialer
   const rawPhone = business.phone || "";
-  const normalizedPhone = business.phone_normalized || rawPhone.replace(/\D/g, "");
-  
-  // Format phone for WhatsApp: ensure leading 90 for Turkey
-  let waPhone = normalizedPhone;
-  if (waPhone.startsWith("0")) {
-    waPhone = "9" + waPhone;
-  } else if (!waPhone.startsWith("90") && waPhone.length === 10) {
-    waPhone = "90" + waPhone;
-  }
-
-  // Pre-generate tailored Turkish pitch message for WhatsApp
-  const generateWhatsAppMessage = () => {
-    const bizName = business.name || "İşletme Yetkilisi";
-    if (business.website_status === "NO_WEBSITE") {
-      return `Merhabalar ${bizName}, Yaytech Studio'dan ulaşıyorum. Google Haritalar'daki yüksek puanlı işletme profilinizi incelediğimizde henüz aktif bir web sitenizin bulunmadığını fark ettik. Bölgenizdeki potansiyel müşterilerin doğrudan randevu ve bilgi alabileceği modern bir web altyapısı için hızlı bir teklif hazırladık: https://yaytech.studio`;
-    }
-    const domain = business.website_domain || business.website || "web siteniz";
-    return `Merhabalar ${bizName}, Yaytech Studio'dan ulaşıyorum. ${domain} web siteniz üzerinde yaptığımız mobil ve hız analizinde müşterilerin erişimini zorlaştıran birkaç kritik nokta tespit ettik. İyileştirme önerilerimizi ve referans çalışmalarımızı iletmek isteriz: https://yaytech.studio`;
-  };
+  const phoneInfo = getPhoneInfo(business.phone);
+  const telHref = phoneInfo.e164 ? `tel:+${phoneInfo.e164}` : `tel:${rawPhone.replace(/[^\d+]/g, "")}`;
 
   const copyPhone = () => {
     if (!rawPhone) return;
@@ -105,9 +93,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
       setCrmStatus(res.nextStatus);
       setContactAttempts((prev) => prev + 1);
       setLastContactedAt(new Date().toISOString());
-      if (followUpDateVal !== undefined) {
-        setNextFollowUpAt(followUpDateVal);
-      }
+      setNextFollowUpAt(res.followUpAt);
       setShowFollowUpBox(false);
 
       // Add optimistic activity
@@ -139,7 +125,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
     } else if (preset === "monday") {
       const day = target.getDay();
       const daysUntilMonday = day === 0 ? 1 : 8 - day;
-      target.setDate(target.getDate() + 2);
+      target.setDate(target.getDate() + daysUntilMonday);
       target.setHours(10, 0, 0, 0);
     }
 
@@ -181,22 +167,27 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
   };
 
   const handleSaveNote = async () => {
-    if (!noteInput.trim()) return;
     setIsSavingNote(true);
     const res = await saveLeadNoteAction(business.id, noteInput);
     setIsSavingNote(false);
+    if (res.success) setSavedNotes(noteInput);
+    else setStatusMessage(res.error || "Not kaydedilemedi.");
+  };
 
-    if (res.success) {
-      const newAct: LeadActivity = {
+  const handleWhatsAppSent = (message: string, nextStatus?: CrmStatus) => {
+    if (nextStatus) setCrmStatus(nextStatus);
+    setLastContactedAt(new Date().toISOString());
+    setActivities((prev) => [
+      {
         id: "temp-" + Date.now(),
         business_id: business.id,
-        type: "note",
-        content: noteInput.trim(),
+        type: "whatsapp",
+        outcome: "sent",
+        content: message,
         created_at: new Date().toISOString(),
-      };
-      setActivities([newAct, ...activities]);
-      setNoteInput("");
-    }
+      },
+      ...prev,
+    ]);
   };
 
   const handleNextLead = async () => {
@@ -232,6 +223,19 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
             <div className="text-xl sm:text-2xl font-extrabold font-mono text-slate-950 tracking-tight mt-0.5 truncate">
               {rawPhone || "Telefon Numarası Yok"}
             </div>
+            {rawPhone && (
+              <span
+                className={`text-[11px] font-semibold ${
+                  phoneInfo.type === "mobile"
+                    ? "text-emerald-700"
+                    : phoneInfo.type === "corporate"
+                    ? "text-rose-600"
+                    : "text-slate-500"
+                }`}
+              >
+                {PHONE_TYPE_LABEL[phoneInfo.type]}
+              </span>
+            )}
           </div>
         </div>
 
@@ -240,7 +244,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
           {rawPhone && (
             <>
               <a
-                href={`tel:${normalizedPhone}`}
+                href={telHref}
                 className="h-10 px-3 sm:px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold shadow-xs transition inline-flex items-center justify-center gap-1.5"
               >
                 <span>📞 Hemen Ara</span>
@@ -252,15 +256,15 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
               >
                 {copiedPhone ? "✓ Kopyalandı" : "Kopyala"}
               </button>
-              <a
-                href={`https://wa.me/${waPhone}?text=${encodeURIComponent(generateWhatsAppMessage())}`}
-                target="_blank"
-                rel="noreferrer"
-                className="h-10 px-3 sm:px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition inline-flex items-center justify-center gap-1.5"
-                title="Tek tıkla hazır Türkçe satış mesajını WhatsApp ile açar"
+              <button
+                type="button"
+                disabled={!phoneInfo.whatsappNumber}
+                onClick={() => setShowWhatsApp((v) => !v)}
+                className="h-10 px-3 sm:px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow-xs transition inline-flex items-center justify-center gap-1.5 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
+                title={phoneInfo.whatsappNumber ? "Hazır mesajı düzenleyip WhatsApp'ta aç" : "Sabit hat / kurumsal numara — WhatsApp kullanılamaz"}
               >
                 <span>💬 WhatsApp</span>
-              </a>
+              </button>
             </>
           )}
 
@@ -275,6 +279,18 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
           </button>
         </div>
       </div>
+
+      {showWhatsApp && phoneInfo.whatsappNumber && (
+        <div className="-mt-3 mb-6">
+          <WhatsAppComposer
+            businessId={business.id}
+            whatsappNumber={phoneInfo.whatsappNumber}
+            initialMessage={buildWhatsAppMessage({ ...business, audit: latestAudit })}
+            onSent={handleWhatsAppSent}
+            onClose={() => setShowWhatsApp(false)}
+          />
+        </div>
+      )}
 
       {/* 2. 1-Click Call Outcome Bar */}
       <div className="mb-6">
@@ -487,24 +503,29 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
         {/* Notes Editor */}
         <div>
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
-            Hızlı Satış Notu Ekle
+            İşletme Notları
           </h3>
           <div className="space-y-2.5">
             <textarea
-              rows={3}
+              rows={7}
               value={noteInput}
               onChange={(e) => setNoteInput(e.target.value)}
-              placeholder="Görüşme notu, teklif detayı, itiraz veya sekreter bilgisi..."
-              className="w-full text-xs p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-blue-500 transition"
+              placeholder="Yetkili adı, itirazlar, teklif detayı, sekreter bilgisi... Bu alan kalıcıdır, zaman akışına düşmez."
+              className="w-full text-xs leading-relaxed p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 focus:bg-white focus:outline-none focus:border-amber-400 transition"
             />
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-3">
+              {noteInput !== savedNotes ? (
+                <span className="text-[11px] text-amber-700 font-semibold">Kaydedilmemiş değişiklik</span>
+              ) : (
+                savedNotes && <span className="text-[11px] text-slate-400">Kaydedildi</span>
+              )}
               <button
                 type="button"
-                disabled={isSavingNote || !noteInput.trim()}
+                disabled={isSavingNote || noteInput === savedNotes}
                 onClick={handleSaveNote}
                 className="h-9 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold transition shadow-xs disabled:opacity-50"
               >
-                {isSavingNote ? "Kaydediliyor..." : "Notu Kaydet"}
+                {isSavingNote ? "Kaydediliyor..." : "Notları Kaydet"}
               </button>
             </div>
           </div>
@@ -513,7 +534,7 @@ export function CrmCockpit({ business, initialActivities }: CrmCockpitProps) {
         {/* Activity Timeline Stream */}
         <div>
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2.5">
-            Aktivite Geçmişi ({activities.length})
+            Hareket Geçmişi ({activities.length})
           </h3>
           {activities.length === 0 ? (
             <div className="bg-slate-50 rounded-xl p-6 text-slate-400 text-xs border border-slate-100 text-center">

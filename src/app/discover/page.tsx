@@ -2,6 +2,8 @@ import { getSearchHistory } from "@/services/discovery/orchestrator";
 import { DiscoveryClient } from "./discovery-client";
 
 export const dynamic = "force-dynamic";
+// Discovery scans dozens of websites inside one server action.
+export const maxDuration = 60;
 
 export default async function DiscoverPage() {
   let history: Awaited<ReturnType<typeof getSearchHistory>> = [];

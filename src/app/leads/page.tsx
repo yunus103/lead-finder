@@ -14,6 +14,7 @@ interface LeadsPageProps {
     priority?: string;
     crmTab?: string;
     sortBy?: "score" | "newest";
+    mobile?: string;
   }>;
 }
 
@@ -32,6 +33,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       category: params.category,
       websiteStatus: params.websiteStatus,
       priority: params.priority,
+      mobileOnly: params.mobile === "1",
       sortBy: params.sortBy || "score",
       isExcluded: isExcludedTab ? true : false,
       crmStatus:
@@ -48,6 +50,23 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     loadError = err instanceof Error ? err.message : String(err);
   }
 
+  // Builds a /leads URL that keeps every active filter except the ones being changed.
+  const buildHref = (overrides: Partial<Record<keyof typeof params, string | undefined>>) => {
+    const merged: Record<string, string | undefined> = { ...params, ...overrides };
+    const qs = new URLSearchParams();
+    for (const [key, value] of Object.entries(merged)) {
+      if (value) qs.set(key, value);
+    }
+    return `/leads${qs.toString() ? `?${qs.toString()}` : ""}`;
+  };
+
+  const websiteTabs = [
+    { label: "Tüm Web Durumları", value: "" },
+    { label: "Site Yok", value: "NO_WEBSITE" },
+    { label: "Site Açılmıyor", value: "UNREACHABLE" },
+    { label: "Site Var", value: "HAS_WEBSITE" },
+  ];
+
   const crmTabs = [
     { label: "📋 Tüm Aktifler", value: "all" },
     { label: "📞 Aranacaklar", value: "to_call" },
@@ -58,9 +77,9 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
   const priorityTabs = [
     { label: "Tüm Skorlar", value: "" },
-    { label: "🔥 HOT (80–100)", value: "HOT" },
-    { label: "⚡ WARM (60–79)", value: "WARM" },
-    { label: "❄️ COLD (40–59)", value: "COLD" },
+    { label: "🔥 HOT (70–100)", value: "HOT" },
+    { label: "⚡ WARM (50–69)", value: "WARM" },
+    { label: "❄️ COLD (30–49)", value: "COLD" },
     { label: "Önceliksiz (LOW)", value: "LOW" },
   ];
 
@@ -132,6 +151,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           <form method="GET" className="flex items-center gap-2 w-full max-w-md">
             {params.priority && <input type="hidden" name="priority" value={params.priority} />}
             {activeCrmTab !== "all" && <input type="hidden" name="crmTab" value={activeCrmTab} />}
+            {params.websiteStatus && <input type="hidden" name="websiteStatus" value={params.websiteStatus} />}
+            {params.mobile && <input type="hidden" name="mobile" value={params.mobile} />}
             <div className="relative w-full">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 text-sm">
                 🔍
@@ -206,16 +227,11 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
           {crmTabs.map((tab) => {
             const isActive = activeCrmTab === tab.value;
-            const queryParams = new URLSearchParams();
-            if (params.search) queryParams.set("search", params.search);
-            if (params.sortBy) queryParams.set("sortBy", params.sortBy);
-            if (params.priority) queryParams.set("priority", params.priority);
-            if (tab.value !== "all") queryParams.set("crmTab", tab.value);
 
             return (
               <Link
                 key={tab.value}
-                href={`/leads${queryParams.toString() ? `?${queryParams.toString()}` : ""}`}
+                href={buildHref({ crmTab: tab.value === "all" ? undefined : tab.value })}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition ${
                   isActive
                     ? "bg-slate-950 text-white shadow-xs"
@@ -233,16 +249,11 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           <span className="text-xs font-bold text-slate-400 mr-1">Öncelik Seviyesi:</span>
           {priorityTabs.map((tab) => {
             const isActive = (params.priority || "") === tab.value;
-            const queryParams = new URLSearchParams();
-            if (params.search) queryParams.set("search", params.search);
-            if (params.sortBy) queryParams.set("sortBy", params.sortBy);
-            if (activeCrmTab !== "all") queryParams.set("crmTab", activeCrmTab);
-            if (tab.value) queryParams.set("priority", tab.value);
 
             return (
               <Link
                 key={tab.value}
-                href={`/leads${queryParams.toString() ? `?${queryParams.toString()}` : ""}`}
+                href={buildHref({ priority: tab.value || undefined })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
                   isActive
                     ? "bg-blue-600 text-white shadow-xs"
@@ -254,6 +265,38 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
             );
           })}
         </div>
+      </div>
+
+      {/* Website Status & Phone Filters */}
+      <div className="flex flex-wrap items-center gap-2 -mt-2">
+        <span className="text-xs font-bold text-slate-400 mr-1">Web Durumu:</span>
+        {websiteTabs.map((tab) => {
+          const isActive = (params.websiteStatus || "") === tab.value;
+          return (
+            <Link
+              key={tab.value}
+              href={buildHref({ websiteStatus: tab.value || undefined })}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950"
+              }`}
+            >
+              {tab.label}
+            </Link>
+          );
+        })}
+        <Link
+          href={buildHref({ mobile: params.mobile === "1" ? undefined : "1" })}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ml-2 ${
+            params.mobile === "1"
+              ? "bg-emerald-600 text-white shadow-xs"
+              : "bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950"
+          }`}
+          title="Sadece cep telefonu olanlar (WhatsApp'tan ulaşılabilir, genelde sahibi açar)"
+        >
+          📱 Sadece Cep
+        </Link>
       </div>
 
       {/* Leads Table */}

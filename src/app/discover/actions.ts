@@ -31,8 +31,6 @@ export async function runDiscoveryAction(formData: FormData) {
       limit,
     });
 
-    revalidatePath("/discover");
-
     return {
       success: true,
       search: result.search,
@@ -51,9 +49,7 @@ export async function saveSelectedLeadsAction(leads: DiscoveredCandidateLead[]) 
 
   try {
     const result = await saveSelectedCandidateLeads(leads);
-    revalidatePath("/leads");
-    revalidatePath("/discover");
-    return { success: true, savedCount: result.savedCount, savedIds: result.savedIds };
+    return { success: true, savedCount: result.savedCount, idsByTempId: result.idsByTempId };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return { success: false, error: message };

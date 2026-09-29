@@ -3,6 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { ingestBusiness } from "@/services/business-service";
 import { IngestBusinessInput } from "@/types/business";
+import { CallOutcome, CrmStatus } from "@/types/crm";
+
+// Client components keep their own optimistic state after these actions, so they don't
+// call revalidatePath: that would re-render the whole current page inside the action response.
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export async function ingestLeadAction(formData: FormData) {
   const name = formData.get("name") as string;
@@ -32,8 +40,6 @@ export async function ingestLeadAction(formData: FormData) {
       address,
       provider,
       external_id,
-      rating: 4.5,
-      review_count: 12,
     });
 
     revalidatePath("/leads");
@@ -44,34 +50,27 @@ export async function ingestLeadAction(formData: FormData) {
       businessId: result.business.id,
     };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error) };
   }
 }
 
-export async function runLightweightScanAction(businessId: string) {
+export async function runWebsiteAuditAction(businessId: string) {
   try {
-    const { performLightweightAudit } = await import("@/services/website-service");
-    const audit = await performLightweightAudit(businessId);
-    revalidatePath(`/leads/${businessId}`);
-    revalidatePath("/leads");
+    const { performWebsiteAudit } = await import("@/services/website-service");
+    const audit = await performWebsiteAudit(businessId);
     return { success: true, audit };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error), audit: null };
   }
 }
 
-export async function runDeepAuditAction(businessId: string) {
+export async function runPageSpeedAction(businessId: string) {
   try {
-    const { performDeepAudit } = await import("@/services/website-service");
-    const audit = await performDeepAudit(businessId);
-    revalidatePath(`/leads/${businessId}`);
-    revalidatePath("/leads");
+    const { performPageSpeedAudit } = await import("@/services/website-service");
+    const audit = await performPageSpeedAudit(businessId);
     return { success: true, audit };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error), audit: null };
   }
 }
 
@@ -79,62 +78,45 @@ export async function recalculateScoreAction(businessId: string) {
   try {
     const { updateBusinessScore } = await import("@/services/scoring-service");
     const result = await updateBusinessScore(businessId);
-    revalidatePath(`/leads/${businessId}`);
-    revalidatePath("/leads");
     return { success: true, result };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
-  }
-}
-
-export async function recalculateAllScoresAction() {
-  try {
-    const { recalculateAllScores } = await import("@/services/scoring-service");
-    const { count } = await recalculateAllScores();
-    revalidatePath("/leads");
-    return { success: true, count };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error) };
   }
 }
 
 export async function logCallAction(params: {
   businessId: string;
-  outcome: import("@/types/crm").CallOutcome;
+  outcome: CallOutcome;
   notes?: string | null;
   followUpDate?: string | null;
-  customStatus?: import("@/types/crm").CrmStatus;
+  customStatus?: CrmStatus;
   currentAttempts?: number;
   currentStatus?: string;
   queueFilter?: { category?: string; district?: string };
 }) {
   try {
     const { logCallInteraction } = await import("@/services/crm-service");
-    const res = await logCallInteraction(params);
-    revalidatePath(`/leads/${params.businessId}`);
-    revalidatePath("/leads");
-    return res;
+    return await logCallInteraction(params);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, nextStatus: "NEW" as const, nextLeadId: null, error: message };
+    return { success: false, nextStatus: "NEW" as const, nextLeadId: null, followUpAt: null, error: errorMessage(error) };
   }
 }
 
-export async function updateLeadStatusAction(
-  businessId: string,
-  status: import("@/types/crm").CrmStatus
-) {
+export async function logWhatsAppAction(businessId: string, message: string) {
+  try {
+    const { logWhatsAppContact } = await import("@/services/crm-service");
+    return await logWhatsAppContact(businessId, message);
+  } catch (error: unknown) {
+    return { success: false, error: errorMessage(error) };
+  }
+}
+
+export async function updateLeadStatusAction(businessId: string, status: CrmStatus) {
   try {
     const { updateLeadStatus } = await import("@/services/crm-service");
-    const res = await updateLeadStatus(businessId, status);
-    revalidatePath(`/leads/${businessId}`);
-    revalidatePath("/leads");
-    return res;
+    return await updateLeadStatus(businessId, status);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error) };
   }
 }
 
@@ -145,25 +127,18 @@ export async function setLeadExclusionAction(
 ) {
   try {
     const { setLeadExclusion } = await import("@/services/crm-service");
-    const res = await setLeadExclusion(businessId, isExcluded, reason);
-    revalidatePath(`/leads/${businessId}`);
-    revalidatePath("/leads");
-    return res;
+    return await setLeadExclusion(businessId, isExcluded, reason);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error) };
   }
 }
 
 export async function saveLeadNoteAction(businessId: string, noteText: string) {
   try {
     const { saveLeadNote } = await import("@/services/crm-service");
-    const res = await saveLeadNote(businessId, noteText);
-    revalidatePath(`/leads/${businessId}`);
-    return res;
+    return await saveLeadNote(businessId, noteText);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message };
+    return { success: false, error: errorMessage(error) };
   }
 }
 
@@ -176,11 +151,6 @@ export async function getNextLeadAction(
     const nextId = await getNextLeadId(currentLeadId, options);
     return { success: true, nextId };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { success: false, error: message, nextId: null };
+    return { success: false, error: errorMessage(error), nextId: null };
   }
 }
-
-
-
-

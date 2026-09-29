@@ -1,4 +1,6 @@
-import { Business, DiscoveryProvider } from "@/types/business";
+import { DiscoveryProvider } from "@/types/business";
+import { AuditFields } from "@/lib/site-analysis";
+import { PhoneType } from "@/lib/outreach";
 
 export interface DiscoveryQuery {
   location: string;
@@ -73,13 +75,21 @@ export interface DiscoveredCandidateLead {
   score_reasons: Array<{ label: string; points: number; type: "positive" | "negative"; category: string }>;
   website_status: "HAS_WEBSITE" | "NO_WEBSITE" | "UNREACHABLE" | "UNKNOWN";
 
-  // Quick audit details
+  // Full audit from the discovery scan; persisted as-is on save.
+  audit?: AuditFields | null;
+  /** Legacy compact audit kept by searches saved before `audit` existed. */
   audit_preview?: {
     is_https: boolean;
     has_viewport: boolean;
     has_whatsapp: boolean;
     response_time_ms: number;
   } | null;
+
+  phone_type?: PhoneType;
+  /** Same name appears multiple times in the results, or uses a 0850/444 line. */
+  chain_suspect?: boolean;
+  /** e.g. "Web sitesi yerine Instagram linki" when Google's website field is a social/platform page. */
+  presence_note?: string | null;
 
   // DB status check
   already_saved: boolean;

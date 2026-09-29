@@ -1,9 +1,17 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { DiscoveryProvider } from "@/types/business";
-import { ingestBusiness } from "@/services/business-service";
-import { performDeepAudit } from "@/services/website-service";
 import { scanWebsite } from "@/services/website/scanner";
 import { calculateLeadScore } from "@/services/scoring/lead-scorer";
+import { mapWithConcurrency } from "@/lib/concurrency";
+import { classifyWebPresence } from "@/lib/web-presence";
+import { AuditFields, scanToAuditFields, websiteStatusFromHealth } from "@/lib/site-analysis";
+import { getPhoneInfo } from "@/lib/outreach";
+import {
+  normalizeDomain,
+  normalizeInstagram,
+  normalizeName,
+  normalizePhone,
+} from "@/lib/normalization";
 import {
   DiscoveredCandidateLead,
   DiscoveryPreviewResult,
@@ -15,18 +23,15 @@ import {
 import { MockDiscoveryProvider } from "./providers/mock-provider";
 import { GoogleMapsProvider } from "./providers/google-maps-provider";
 
-// Provider registry allows providers to be registered dynamically
+const SCAN_CONCURRENCY = 10;
+
 const providerRegistry = new Map<DiscoveryProvider, IDiscoveryProvider>();
 
-// Register default/active providers
 export function registerProvider(provider: IDiscoveryProvider) {
   providerRegistry.set(provider.name, provider);
 }
 
-// Register live Google Maps provider
 registerProvider(new GoogleMapsProvider());
-
-// Mocks for future phases (Phase 09 Search, Phase 10 Instagram)
 registerProvider(new MockDiscoveryProvider("google_search"));
 registerProvider(new MockDiscoveryProvider("instagram"));
 registerProvider(new MockDiscoveryProvider("manual"));
@@ -50,21 +55,131 @@ export function isExcludedInstitution(name: string): boolean {
   return EXCLUDED_INSTITUTION_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+type RawWithProvider = RawDiscoveredLead & { provider: DiscoveryProvider };
+
 /**
- * Executes an in-memory discovery preview operation across selected providers.
- * Performs real-time scoring and lightweight website scans in memory WITHOUT saving to database.
+ * Finds already-saved businesses by Google Place ID (via business_sources) and normalized phone.
+ * Returns a lookup from place id / normalized phone to business id.
  */
-export async function executeDiscovery(
-  query: DiscoveryQuery
-): Promise<DiscoveryPreviewResult> {
+async function findExistingBusinessIds(
+  items: Array<{ external_id?: string | null; phone?: string | null }>
+): Promise<Map<string, string>> {
+  const externalIds = items.map((r) => r.external_id).filter((v): v is string => !!v);
+  const phones = items.map((r) => normalizePhone(r.phone)).filter((v): v is string => !!v);
+
+  const [sourceRes, phoneRes] = await Promise.all([
+    externalIds.length > 0
+      ? supabaseAdmin
+          .from("business_sources")
+          .select("business_id, external_id")
+          .eq("provider", "google_maps")
+          .in("external_id", externalIds)
+      : Promise.resolve({ data: [] as Array<{ business_id: string; external_id: string }> }),
+    phones.length > 0
+      ? supabaseAdmin.from("businesses").select("id, phone_normalized").in("phone_normalized", phones)
+      : Promise.resolve({ data: [] as Array<{ id: string; phone_normalized: string }> }),
+  ]);
+
+  const map = new Map<string, string>();
+  for (const s of sourceRes.data || []) if (s.external_id) map.set(s.external_id, s.business_id);
+  for (const b of phoneRes.data || []) if (b.phone_normalized) map.set(b.phone_normalized, b.id);
+  return map;
+}
+
+function lookupExisting(
+  map: Map<string, string>,
+  item: { external_id?: string | null; phone?: string | null }
+): string | undefined {
+  const phone = normalizePhone(item.phone);
+  return (item.external_id && map.get(item.external_id)) || (phone && map.get(phone)) || undefined;
+}
+
+async function buildCandidate(
+  raw: RawWithProvider,
+  query: DiscoveryQuery,
+  chainNames: Set<string>,
+  existingId: string | undefined
+): Promise<DiscoveredCandidateLead> {
+  let website = raw.website?.trim() || null;
+  let instagram = raw.instagram || null;
+  let presenceNote: string | null = null;
+
+  const presence = classifyWebPresence(website);
+  if (presence.kind === "social" || presence.kind === "platform") {
+    presenceNote = `Web sitesi yerine ${presence.platform} linki`;
+    if (presence.instagram && !instagram) instagram = website;
+    website = null;
+  }
+
+  let audit: AuditFields | null = null;
+  let websiteStatus: DiscoveredCandidateLead["website_status"] = "NO_WEBSITE";
+
+  if (website) {
+    const scan = await scanWebsite(website);
+    if (scan.redirectPlatform) {
+      presenceNote = `Alan adı ${scan.redirectPlatform} sayfasına yönleniyor`;
+      website = null;
+    } else {
+      audit = scanToAuditFields(scan);
+      websiteStatus = websiteStatusFromHealth(scan.health);
+    }
+  }
+
+  const phoneInfo = getPhoneInfo(raw.phone);
+  const score = calculateLeadScore(
+    {
+      website,
+      website_status: websiteStatus,
+      rating: raw.rating ?? null,
+      review_count: raw.review_count ?? 0,
+      phone: raw.phone ?? null,
+      instagram,
+      is_excluded: false,
+    },
+    audit
+  );
+
+  return {
+    tempId: raw.external_id || `${raw.name}-${raw.phone || Math.random()}`,
+    name: raw.name,
+    category: raw.category || query.sector,
+    address: raw.address || null,
+    city: raw.city || query.location,
+    district: raw.district || query.district || null,
+    phone: raw.phone || null,
+    website,
+    instagram,
+    rating: raw.rating ?? null,
+    review_count: raw.review_count ?? 0,
+    external_id: raw.external_id || null,
+    source_url: raw.source_url || null,
+    provider: raw.provider,
+    lead_score: score.score,
+    priority: score.priority,
+    score_reasons: score.reasons,
+    website_status: websiteStatus,
+    audit,
+    phone_type: phoneInfo.type,
+    chain_suspect: chainNames.has(normalizeName(raw.name)) || phoneInfo.type === "corporate",
+    presence_note: presenceNote,
+    already_saved: !!existingId,
+    existing_business_id: existingId,
+    raw_data: raw.raw_data,
+  };
+}
+
+/**
+ * Runs providers, scans websites concurrently and scores everything in memory.
+ * Nothing is written to businesses — only the search record (for history/replay).
+ */
+export async function executeDiscovery(query: DiscoveryQuery): Promise<DiscoveryPreviewResult> {
   if (!query.location?.trim() || !query.sector?.trim()) {
     throw new Error("Konum (şehir) ve sektör alanları zorunludur.");
   }
 
   const selectedSources = query.sources.length > 0 ? query.sources : (["google_maps"] as DiscoveryProvider[]);
 
-  // 1. Create initial search history record (tracks the search itself)
-  const { data: searchRecord, error: searchCreateError } = await supabaseAdmin
+  const searchInsert = supabaseAdmin
     .from("searches")
     .insert({
       location: query.location.trim(),
@@ -73,381 +188,162 @@ export async function executeDiscovery(
       sources: selectedSources,
       status: "processing",
     })
-    .select("*")
+    .select("id, location, district, sector, sources, status, raw_count, unique_count, new_count, existing_count, error_message, created_at, completed_at")
     .single();
 
-  if (searchCreateError || !searchRecord) {
-    throw new Error(`Arama kaydı oluşturulamadı: ${searchCreateError?.message}`);
-  }
-
-  try {
-    const rawLeads: Array<RawDiscoveredLead & { provider: DiscoveryProvider }> = [];
-
-    // 2. Query each selected provider for raw places
-    for (const source of selectedSources) {
+  const providerResults = Promise.all(
+    selectedSources.map(async (source) => {
       const provider = providerRegistry.get(source);
-      if (!provider) {
-        console.warn(`Uyarı: '${source}' için kayıtlı sağlayıcı bulunamadı.`);
-        continue;
-      }
-
+      if (!provider) return [] as RawWithProvider[];
       const leads = await provider.discover({
         location: query.location,
         district: query.district,
         sector: query.sector,
         limit: query.limit,
       });
+      return leads.map((lead) => ({ ...lead, provider: source }));
+    })
+  );
 
-      for (const lead of leads) {
-        if (isExcludedInstitution(lead.name)) {
-          continue;
-        }
-        rawLeads.push({ ...lead, provider: source });
-      }
+  const [{ data: searchRecord, error: searchCreateError }, rawLeadsNested] = await Promise.all([
+    searchInsert,
+    providerResults.catch((err: unknown) => err as Error),
+  ]);
 
+  if (searchCreateError || !searchRecord) {
+    throw new Error(`Arama kaydı oluşturulamadı: ${searchCreateError?.message}`);
+  }
+
+  try {
+    if (rawLeadsNested instanceof Error) throw rawLeadsNested;
+    const rawLeads = rawLeadsNested.flat().filter((lead) => !isExcludedInstitution(lead.name));
+
+    const nameCounts = new Map<string, number>();
+    for (const lead of rawLeads) {
+      const key = normalizeName(lead.name);
+      nameCounts.set(key, (nameCounts.get(key) || 0) + 1);
     }
+    const chainNames = new Set([...nameCounts].filter(([, count]) => count > 1).map(([name]) => name));
 
-    // 3. Batch check against existing businesses in DB
-    const externalIds = rawLeads.map((r) => r.external_id).filter(Boolean) as string[];
-    const phones = rawLeads.map((r) => r.phone).filter(Boolean) as string[];
+    const existingMap = await findExistingBusinessIds(rawLeads);
 
-    const existingMap = new Map<string, { id: string; name: string }>();
+    const candidateLeads = await mapWithConcurrency(rawLeads, SCAN_CONCURRENCY, (raw) =>
+      buildCandidate(raw, query, chainNames, lookupExisting(existingMap, raw))
+    );
 
-    if (externalIds.length > 0) {
-      const { data: matches } = await supabaseAdmin
-        .from("businesses")
-        .select("id, name, google_place_id, phone")
-        .in("google_place_id", externalIds);
-
-      if (matches) {
-        for (const m of matches) {
-          if (m.google_place_id) existingMap.set(m.google_place_id, m);
-          if (m.phone) existingMap.set(m.phone, m);
-        }
-      }
-    }
-
-    if (phones.length > 0) {
-      const { data: matches } = await supabaseAdmin
-        .from("businesses")
-        .select("id, name, google_place_id, phone")
-        .in("phone", phones);
-
-      if (matches) {
-        for (const m of matches) {
-          if (m.phone) existingMap.set(m.phone, m);
-          if (m.google_place_id) existingMap.set(m.google_place_id, m);
-        }
-      }
-    }
-
-    // 4. In-memory scanning & lead scoring
-    const candidateLeads: DiscoveredCandidateLead[] = [];
-    const BATCH_SIZE = 5;
-
-    for (let i = 0; i < rawLeads.length; i += BATCH_SIZE) {
-      const batch = rawLeads.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(
-        batch.map(async (raw): Promise<DiscoveredCandidateLead> => {
-          const existing =
-            (raw.external_id && existingMap.get(raw.external_id)) ||
-            (raw.phone && existingMap.get(raw.phone)) ||
-            undefined;
-
-          const tempId = raw.external_id || `${raw.name}-${raw.phone || Math.random()}`;
-
-          // No website case: instant calculation
-          if (!raw.website || raw.website.trim() === "") {
-            const scoreResult = calculateLeadScore({
-              website: null,
-              website_status: "NO_WEBSITE",
-              rating: raw.rating ?? null,
-              review_count: raw.review_count ?? 0,
-              phone: raw.phone ?? null,
-              instagram: raw.instagram ?? null,
-              is_excluded: false,
-            });
-
-            return {
-              tempId,
-              name: raw.name,
-              category: raw.category || query.sector,
-              address: raw.address || null,
-              city: raw.city || query.location,
-              district: raw.district || query.district || null,
-              phone: raw.phone || null,
-              website: null,
-              instagram: raw.instagram || null,
-              rating: raw.rating ?? null,
-              review_count: raw.review_count ?? 0,
-              external_id: raw.external_id || null,
-              source_url: raw.source_url || null,
-              provider: raw.provider,
-              lead_score: scoreResult.score,
-              priority: scoreResult.priority,
-              score_reasons: scoreResult.reasons,
-              website_status: "NO_WEBSITE",
-              audit_preview: null,
-              already_saved: !!existing,
-              existing_business_id: existing?.id,
-              raw_data: raw.raw_data,
-            };
-          }
-
-          // Has website: Perform lightweight scan in memory
-          try {
-            const scan = await scanWebsite(raw.website);
-            const isReachable = scan.status === "success";
-            const websiteStatus = isReachable ? "HAS_WEBSITE" : "UNREACHABLE";
-
-            const simulatedAudit = isReachable
-              ? {
-                  has_viewport: scan.hasViewport,
-                  response_time_ms: scan.responseTimeMs,
-                  is_https: scan.isHttps,
-                  deep_audit_data: {
-                    hasWhatsApp: scan.hasWhatsApp,
-                    hasCallButton: scan.hasCallButton,
-                    isMobileResponsive: scan.hasViewport,
-                    speedLabel: scan.responseTimeMs > 2500 ? "Yavaş" : scan.responseTimeMs > 1500 ? "Orta" : "Hızlı",
-                    salesPitch: "",
-                    problems: [],
-                  },
-                  technologies: scan.technologies || [],
-                }
-              : null;
-
-            const scoreResult = calculateLeadScore(
-              {
-                website: raw.website,
-                website_status: websiteStatus,
-                rating: raw.rating ?? null,
-                review_count: raw.review_count ?? 0,
-                phone: raw.phone ?? null,
-                instagram: raw.instagram ?? null,
-                is_excluded: false,
-              },
-              simulatedAudit as any
-            );
-
-            return {
-              tempId,
-              name: raw.name,
-              category: raw.category || query.sector,
-              address: raw.address || null,
-              city: raw.city || query.location,
-              district: raw.district || query.district || null,
-              phone: raw.phone || null,
-              website: raw.website,
-              instagram: raw.instagram || null,
-              rating: raw.rating ?? null,
-              review_count: raw.review_count ?? 0,
-              external_id: raw.external_id || null,
-              source_url: raw.source_url || null,
-              provider: raw.provider,
-              lead_score: scoreResult.score,
-              priority: scoreResult.priority,
-              score_reasons: scoreResult.reasons,
-              website_status: websiteStatus,
-              audit_preview: isReachable
-                ? {
-                    is_https: scan.isHttps,
-                    has_viewport: scan.hasViewport,
-                    has_whatsapp: scan.hasWhatsApp,
-                    response_time_ms: scan.responseTimeMs,
-                  }
-                : null,
-              already_saved: !!existing,
-              existing_business_id: existing?.id,
-              raw_data: raw.raw_data,
-            };
-          } catch {
-            const scoreResult = calculateLeadScore({
-              website: raw.website,
-              website_status: "UNREACHABLE",
-              rating: raw.rating ?? null,
-              review_count: raw.review_count ?? 0,
-              phone: raw.phone ?? null,
-              instagram: raw.instagram ?? null,
-              is_excluded: false,
-            });
-
-            return {
-              tempId,
-              name: raw.name,
-              category: raw.category || query.sector,
-              address: raw.address || null,
-              city: raw.city || query.location,
-              district: raw.district || query.district || null,
-              phone: raw.phone || null,
-              website: raw.website,
-              instagram: raw.instagram || null,
-              rating: raw.rating ?? null,
-              review_count: raw.review_count ?? 0,
-              external_id: raw.external_id || null,
-              source_url: raw.source_url || null,
-              provider: raw.provider,
-              lead_score: scoreResult.score,
-              priority: scoreResult.priority,
-              score_reasons: scoreResult.reasons,
-              website_status: "UNREACHABLE",
-              audit_preview: null,
-              already_saved: !!existing,
-              existing_business_id: existing?.id,
-              raw_data: raw.raw_data,
-            };
-          }
-        })
-      );
-      candidateLeads.push(...batchResults);
-    }
-
-    // Sort descending by lead_score (highest priority leads at top)
     candidateLeads.sort((a, b) => b.lead_score - a.lead_score);
 
     const existingCount = candidateLeads.filter((c) => c.already_saved).length;
-    const newCount = candidateLeads.length - existingCount;
 
-    // 5. Update searches table with final metrics and raw_results
-    const updatePayload: Record<string, unknown> = {
-      status: "completed",
-      raw_count: rawLeads.length,
-      unique_count: candidateLeads.length,
-      new_count: newCount,
-      existing_count: existingCount,
-      raw_results: candidateLeads,
-      completed_at: new Date().toISOString(),
-    };
-
-    let updatedSearch: SearchRecord | null = null;
-    const { data: updateRes, error: updateError } = await supabaseAdmin
+    const { data: updatedSearch } = await supabaseAdmin
       .from("searches")
-      .update(updatePayload)
+      .update({
+        status: "completed",
+        raw_count: rawLeads.length,
+        unique_count: candidateLeads.length,
+        new_count: candidateLeads.length - existingCount,
+        existing_count: existingCount,
+        raw_results: candidateLeads,
+        completed_at: new Date().toISOString(),
+      })
       .eq("id", searchRecord.id)
-      .select("*")
+      .select("id, location, district, sector, sources, status, raw_count, unique_count, new_count, existing_count, error_message, created_at, completed_at")
       .single();
 
-    if (updateError) {
-      // Fallback without raw_results if column not yet migrated
-      console.warn("Searches raw_results column not yet created, saving without it:", updateError.message);
-      delete updatePayload.raw_results;
-      const { data: fallbackRes } = await supabaseAdmin
-        .from("searches")
-        .update(updatePayload)
-        .eq("id", searchRecord.id)
-        .select("*")
-        .single();
-      updatedSearch = fallbackRes;
-    } else {
-      updatedSearch = updateRes;
-    }
-
     return {
-      search: updatedSearch || searchRecord,
+      search: (updatedSearch || searchRecord) as SearchRecord,
       items: candidateLeads,
     };
   } catch (error: unknown) {
     const errMessage = error instanceof Error ? error.message : String(error);
     await supabaseAdmin
       .from("searches")
-      .update({
-        status: "failed",
-        error_message: errMessage,
-        completed_at: new Date().toISOString(),
-      })
+      .update({ status: "failed", error_message: errMessage, completed_at: new Date().toISOString() })
       .eq("id", searchRecord.id);
-
     throw error;
   }
 }
 
 /**
- * Persists selected candidate leads to the database via fast batch CRUD.
- * Does not block on live HTTP website scans (audits run on-demand on lead detail page).
+ * Persists selected candidates with a handful of bulk queries instead of per-lead round trips.
+ * Candidates that already exist in the CRM are left untouched (their CRM data is never overwritten).
+ * Returns tempId → business id for every requested lead.
  */
 export async function saveSelectedCandidateLeads(
   leads: DiscoveredCandidateLead[]
-): Promise<{ savedCount: number; savedIds: string[] }> {
-  const savedIds: string[] = [];
-  const BATCH_SIZE = 5;
+): Promise<{ savedCount: number; idsByTempId: Record<string, string> }> {
+  const existingMap = await findExistingBusinessIds(leads);
+  const idsByTempId: Record<string, string> = {};
 
-  for (let i = 0; i < leads.length; i += BATCH_SIZE) {
-    const chunk = leads.slice(i, i + BATCH_SIZE);
-    const chunkIds = await Promise.all(
-      chunk.map(async (lead) => {
-        const ingestRes = await ingestBusiness({
-          name: lead.name,
-          category: lead.category,
-          address: lead.address,
-          city: lead.city,
-          district: lead.district,
-          phone: lead.phone,
-          website: lead.website,
-          instagram: lead.instagram,
-          rating: lead.rating,
-          review_count: lead.review_count,
-          provider: lead.provider,
-          external_id: lead.external_id,
-          source_url: lead.source_url,
-          raw_data: lead.raw_data,
-          lead_score: lead.lead_score,
-          priority: lead.priority,
-          score_reasons: lead.score_reasons,
-          website_status: lead.website_status,
-        });
+  const seenKeys = new Set<string>();
+  const toInsert: Array<{ id: string; lead: DiscoveredCandidateLead }> = [];
 
-        const businessId = ingestRes.business.id;
+  for (const lead of leads) {
+    const existingId = lookupExisting(existingMap, lead);
+    if (existingId) {
+      idsByTempId[lead.tempId] = existingId;
+      continue;
+    }
+    // Guard against the same business appearing twice in one selection.
+    const key = lead.external_id || normalizePhone(lead.phone) || lead.tempId;
+    if (seenKeys.has(key)) continue;
+    seenKeys.add(key);
 
-        if (!ingestRes.isNew) {
-          await supabaseAdmin
-            .from("businesses")
-            .update({
-              website_status: lead.website_status,
-              lead_score: lead.lead_score,
-              priority: lead.priority,
-              score_reasons: lead.score_reasons,
-              last_scanned_at: new Date().toISOString(),
-            })
-            .eq("id", businessId);
-        }
-
-        if (lead.website && lead.audit_preview) {
-          try {
-            await supabaseAdmin.from("website_audits").insert({
-              business_id: businessId,
-              audit_type: "lightweight",
-              url: lead.website,
-              status: "success",
-              response_time_ms: lead.audit_preview.response_time_ms,
-              is_https: lead.audit_preview.is_https,
-              has_viewport: lead.audit_preview.has_viewport,
-              technologies: [],
-              deep_audit_data: {
-                hasWhatsApp: lead.audit_preview.has_whatsapp,
-                hasCallButton: true,
-                isMobileResponsive: lead.audit_preview.has_viewport,
-                speedLabel:
-                  lead.audit_preview.response_time_ms > 2500
-                    ? "Yavaş"
-                    : lead.audit_preview.response_time_ms > 1500
-                    ? "Orta"
-                    : "Hızlı",
-                salesPitch: "",
-                problems: [],
-              },
-            });
-          } catch (auditInsertErr) {
-            console.warn("Lightweight audit insert warning on save:", auditInsertErr);
-          }
-        }
-
-        return businessId;
-      })
-    );
-    savedIds.push(...chunkIds);
+    const id = crypto.randomUUID();
+    idsByTempId[lead.tempId] = id;
+    toInsert.push({ id, lead });
   }
 
-  return { savedCount: savedIds.length, savedIds };
+  if (toInsert.length === 0) return { savedCount: 0, idsByTempId };
+
+  const { error: insertError } = await supabaseAdmin.from("businesses").insert(
+    toInsert.map(({ id, lead }) => ({
+      id,
+      name: lead.name.trim(),
+      category: lead.category || null,
+      address: lead.address,
+      city: lead.city,
+      district: lead.district,
+      phone: lead.phone,
+      phone_normalized: normalizePhone(lead.phone),
+      website: lead.website,
+      website_domain: normalizeDomain(lead.website),
+      instagram: lead.instagram,
+      instagram_normalized: normalizeInstagram(lead.instagram),
+      rating: lead.rating,
+      review_count: lead.review_count,
+      website_status: lead.website_status,
+      crm_status: "NEW",
+      lead_score: lead.lead_score,
+      priority: lead.priority,
+      score_reasons: lead.score_reasons,
+      is_excluded: false,
+      last_scanned_at: lead.audit ? new Date().toISOString() : null,
+    }))
+  );
+  if (insertError) throw new Error(`İşletmeler kaydedilemedi: ${insertError.message}`);
+
+  const withAudit = toInsert.filter(({ lead }) => lead.audit);
+  const [sourcesRes, auditsRes] = await Promise.all([
+    supabaseAdmin.from("business_sources").insert(
+      toInsert.map(({ id, lead }) => ({
+        business_id: id,
+        provider: lead.provider,
+        external_id: lead.external_id,
+        source_url: lead.source_url,
+        raw_data: lead.raw_data || {},
+      }))
+    ),
+    withAudit.length > 0
+      ? supabaseAdmin.from("website_audits").insert(
+          withAudit.map(({ id, lead }) => ({ business_id: id, audit_type: "lightweight", ...lead.audit }))
+        )
+      : Promise.resolve({ error: null }),
+  ]);
+  if (sourcesRes.error) console.error("Kaynak kayıtları eklenemedi:", sourcesRes.error.message);
+  if (auditsRes.error) console.error("Audit kayıtları eklenemedi:", auditsRes.error.message);
+
+  return { savedCount: toInsert.length, idsByTempId };
 }
 
 /**
@@ -456,77 +352,29 @@ export async function saveSelectedCandidateLeads(
 export async function getSearchWithCandidateResults(
   searchId: string
 ): Promise<{ search: SearchRecord; items: DiscoveredCandidateLead[] } | null> {
-  const { data: search, error } = await supabaseAdmin
-    .from("searches")
-    .select("*")
-    .eq("id", searchId)
-    .single();
-
-  if (error || !search) {
-    return null;
-  }
+  const { data: search, error } = await supabaseAdmin.from("searches").select("*").eq("id", searchId).single();
+  if (error || !search) return null;
 
   const rawResults = (search.raw_results || []) as DiscoveredCandidateLead[];
-  if (rawResults.length === 0) {
-    return { search, items: [] };
-  }
+  delete search.raw_results;
+  if (rawResults.length === 0) return { search, items: [] };
 
-  // Refresh already_saved status against current DB
-  const externalIds = rawResults.map((r) => r.external_id).filter(Boolean) as string[];
-  const phones = rawResults.map((r) => r.phone).filter(Boolean) as string[];
-
-  const existingMap = new Map<string, { id: string; name: string }>();
-
-  if (externalIds.length > 0) {
-    const { data: matches } = await supabaseAdmin
-      .from("businesses")
-      .select("id, name, google_place_id, phone")
-      .in("google_place_id", externalIds);
-
-    if (matches) {
-      for (const m of matches) {
-        if (m.google_place_id) existingMap.set(m.google_place_id, m);
-        if (m.phone) existingMap.set(m.phone, m);
-      }
-    }
-  }
-
-  if (phones.length > 0) {
-    const { data: matches } = await supabaseAdmin
-      .from("businesses")
-      .select("id, name, google_place_id, phone")
-      .in("phone", phones);
-
-    if (matches) {
-      for (const m of matches) {
-        if (m.phone) existingMap.set(m.phone, m);
-        if (m.google_place_id) existingMap.set(m.google_place_id, m);
-      }
-    }
-  }
-
+  const existingMap = await findExistingBusinessIds(rawResults);
   const refreshedItems = rawResults.map((lead) => {
-    const existing =
-      (lead.external_id ? existingMap.get(lead.external_id) : undefined) ||
-      (lead.phone ? existingMap.get(lead.phone) : undefined);
-    return {
-      ...lead,
-      already_saved: !!existing,
-      existing_business_id: existing?.id || lead.existing_business_id,
-    };
-
+    const existingId = lookupExisting(existingMap, lead);
+    return { ...lead, already_saved: !!existingId, existing_business_id: existingId };
   });
 
   return { search, items: refreshedItems };
 }
 
 /**
- * Fetches recent search history.
+ * Fetches recent search history (without the heavy raw_results payload).
  */
 export async function getSearchHistory(limit: number = 20): Promise<SearchRecord[]> {
   const { data, error } = await supabaseAdmin
     .from("searches")
-    .select("*")
+    .select("id, location, district, sector, sources, status, raw_count, unique_count, new_count, existing_count, error_message, created_at, completed_at")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -534,6 +382,5 @@ export async function getSearchHistory(limit: number = 20): Promise<SearchRecord
     throw new Error(`Arama geçmişi alınamadı: ${error.message}`);
   }
 
-  return data || [];
+  return (data || []) as SearchRecord[];
 }
-

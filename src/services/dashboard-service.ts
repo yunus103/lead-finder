@@ -114,7 +114,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     else if (status === "CONTACTED") contacted++;
     else if (status === "NEW" || status === "TO_CALL") {
       toCall++;
-      if (score >= 80 && attempts === 0) {
+      if (score >= 70 && attempts === 0) {
         hotUntouchedCount++;
       }
     } else if (status === "FOLLOW_UP" || r.next_follow_up_at) {

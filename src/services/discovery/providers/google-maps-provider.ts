@@ -15,6 +15,7 @@ interface GooglePlaceNew {
   rating?: number;
   userRatingCount?: number;
   types?: string[];
+  businessStatus?: "OPERATIONAL" | "CLOSED_TEMPORARILY" | "CLOSED_PERMANENTLY";
 }
 
 interface GooglePlacesSearchResponse {
@@ -65,6 +66,7 @@ export class GoogleMapsProvider implements IDiscoveryProvider {
       "places.rating",
       "places.userRatingCount",
       "places.types",
+      "places.businessStatus",
       "nextPageToken",
     ].join(",");
 
@@ -116,7 +118,10 @@ export class GoogleMapsProvider implements IDiscoveryProvider {
         return [];
       }
 
-      return allPlaces.map((place) => ({
+      // Closed businesses are never leads.
+      const openPlaces = allPlaces.filter((p) => !p.businessStatus || p.businessStatus === "OPERATIONAL");
+
+      return openPlaces.map((place) => ({
         name: place.displayName?.text?.trim() || "İsimsiz İşletme",
         category: params.sector,
         address: place.formattedAddress || null,

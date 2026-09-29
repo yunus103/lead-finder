@@ -1,275 +1,194 @@
 import { Business } from "@/types/business";
-import { WebsiteAudit } from "@/types/website";
 import { LeadPriority, ScoreCalculationResult, ScoreReason } from "@/types/scoring";
+import { AuditFields, SLOW_SERVER_MS, auditHealth, isOutdatedYear } from "@/lib/site-analysis";
+import { getPhoneInfo } from "@/lib/outreach";
+
+export type ScoringBusiness = Pick<
+  Business,
+  "website" | "website_status" | "rating" | "review_count" | "phone" | "instagram" | "is_excluded"
+>;
+
+export type ScoringAudit = Pick<
+  AuditFields,
+  "status" | "has_viewport" | "is_https" | "response_time_ms" | "technologies" | "contact_emails" | "deep_audit_data"
+>;
 
 /**
- * Weights configuration for deterministic lead scoring.
- * All values are centralized here for easy tuning.
+ * Weights for deterministic lead scoring. The website opportunity acts as a gate:
+ * a business whose site is already fine is capped below COLD no matter how good its
+ * reputation is — reviews only make a real website opportunity more valuable.
  */
 export const SCORING_WEIGHTS = {
-  // Website opportunity signals
-  NO_WEBSITE: 35,
-  UNREACHABLE_WEBSITE: 30,
-  MISSING_VIEWPORT: 10,
-  SLOW_RESPONSE: 8,
-  MISSING_SSL: 8,
-  MISSING_WHATSAPP: 5,
-  HEAVY_WORDPRESS: 5,
-  MODERN_FAST_SITE_PENALTY: -20,
+  NO_WEBSITE: 40,
+  PARKED_DOMAIN: 38,
+  BROKEN_WEBSITE: 35,
 
-  // Commercial viability & reputation signals
-  REVIEWS_100_PLUS: 20,
-  REVIEWS_30_TO_99: 15,
-  REVIEWS_10_TO_29: 8,
-  REVIEWS_UNDER_10: 3,
-  RATING_4_5_PLUS: 15,
-  RATING_4_0_TO_4_4: 10,
-  RATING_3_5_TO_3_9: 5,
+  SSL_WARNING: 15,
+  NOT_MOBILE: 15,
+  NO_HTTPS: 12,
+  OUTDATED: 10,
+  FLASH: 10,
+  PAGESPEED_LOW: 8,
+  SLOW_SERVER: 5,
+  NO_WHATSAPP: 3,
+  NO_CALL_BUTTON: 2,
+  WEBSITE_ISSUES_MAX: 35,
+  /** Below this many issue points the existing site counts as "fine". */
+  WEBSITE_ISSUES_GATE: 12,
+  HEALTHY_SITE_SCORE_CAP: 29,
 
-  // Outreach reachability signals
-  PHONE_AVAILABLE: 15,
+  REVIEWS_SWEET_SPOT: 15, // 20–399
+  REVIEWS_LARGE: 8, // 400–1000
+  REVIEWS_SOME: 8, // 5–19
+  REVIEWS_FEW: 2, // 1–4
+  REVIEWS_HUGE_PENALTY: -10, // >1000, likely chain / big brand
+  RATING_HIGH: 10, // ≥ 4.3
+  RATING_OK: 5, // ≥ 3.8
+
+  MOBILE_PHONE: 15,
+  LANDLINE_PHONE: 8,
+  OTHER_PHONE: 5,
+  CORPORATE_PHONE_PENALTY: -10,
+  NO_PHONE_PENALTY: -15,
   INSTAGRAM_AVAILABLE: 5,
-  EMAIL_DISCOVERED: 5,
+  EMAIL_DISCOVERED: 3,
 
-  // Exclusion penalty
   EXCLUDED_PENALTY: -50,
 };
 
-/**
- * Maps a numeric 0–100 score to its operational priority category.
- */
 export function getPriorityFromScore(score: number): LeadPriority {
-  if (score >= 80) return "HOT";
-  if (score >= 60) return "WARM";
-  if (score >= 40) return "COLD";
+  if (score >= 70) return "HOT";
+  if (score >= 50) return "WARM";
+  if (score >= 30) return "COLD";
   return "LOW";
+}
+
+function scoreWebsite(
+  business: ScoringBusiness,
+  audit: ScoringAudit | null | undefined,
+  add: (label: string, points: number, category: ScoreReason["category"]) => void
+): { capped: boolean } {
+  const W = SCORING_WEIGHTS;
+  const hasNoWebsite = business.website_status === "NO_WEBSITE" || !business.website?.trim();
+
+  if (hasNoWebsite) {
+    add(
+      business.instagram ? "Web sitesi yok, sadece Instagram kullanıyor" : "Web sitesi yok (yeni site fırsatı)",
+      W.NO_WEBSITE,
+      "website"
+    );
+    return { capped: false };
+  }
+
+  if (business.website_status === "UNREACHABLE") {
+    const health = audit ? auditHealth(audit) : "down";
+    const detail = audit?.deep_audit_data?.healthDetail;
+    if (health === "parked") {
+      add(`Alan adı var ama site yok${detail ? ` (${detail})` : ""}`, W.PARKED_DOMAIN, "website");
+    } else {
+      add(`Web sitesi açılmıyor${detail ? ` (${detail})` : ""}`, W.BROKEN_WEBSITE, "website");
+    }
+    return { capped: false };
+  }
+
+  // Unscanned site: no website signal either way.
+  if (!audit) return { capped: false };
+
+  const health = auditHealth(audit);
+  if (health === "protected") {
+    add("Site çalışıyor (bot korumalı, profesyonel altyapı)", 0, "website");
+    return { capped: true };
+  }
+  if (health !== "ok") {
+    add("Web sitesi açılmıyor", W.BROKEN_WEBSITE, "website");
+    return { capped: false };
+  }
+
+  const d = audit.deep_audit_data;
+  const issues: Array<[string, number]> = [];
+  if (d?.sslIssue === "expired" || d?.sslIssue === "invalid") {
+    issues.push(["Tarayıcı 'Güvenli değil' uyarısı veriyor (SSL sorunlu)", W.SSL_WARNING]);
+  } else if (!audit.is_https) {
+    issues.push(["HTTPS yok (Chrome 'Güvenli değil' gösteriyor)", W.NO_HTTPS]);
+  }
+  if (!audit.has_viewport) issues.push(["Mobil uyumlu değil", W.NOT_MOBILE]);
+  if (isOutdatedYear(d?.copyrightYear)) issues.push([`Site eski görünüyor (telif ${d?.copyrightYear})`, W.OUTDATED]);
+  if (audit.technologies?.includes("Flash")) issues.push(["Flash kullanıyor", W.FLASH]);
+  if (d?.pageSpeed && d.pageSpeed.score < 50) {
+    issues.push([`Google mobil hız puanı düşük (${d.pageSpeed.score}/100)`, W.PAGESPEED_LOW]);
+  } else if (!d?.pageSpeed && (audit.response_time_ms || 0) > SLOW_SERVER_MS) {
+    issues.push(["Sunucu çok yavaş yanıt veriyor", W.SLOW_SERVER]);
+  }
+  if (d && !d.hasWhatsApp) issues.push(["WhatsApp butonu yok", W.NO_WHATSAPP]);
+  if (d && !d.hasCallButton) issues.push(["Tıklanabilir telefon yok", W.NO_CALL_BUTTON]);
+
+  const total = issues.reduce((sum, [, pts]) => sum + pts, 0);
+  let budget = W.WEBSITE_ISSUES_MAX;
+  for (const [label, pts] of issues) {
+    const granted = Math.min(pts, budget);
+    if (granted <= 0) break;
+    add(label, granted, "website");
+    budget -= granted;
+  }
+
+  if (total < W.WEBSITE_ISSUES_GATE) {
+    add("Mevcut site çalışır durumda — düşük fırsat", 0, "penalty");
+    return { capped: true };
+  }
+  return { capped: false };
 }
 
 /**
  * Pure, deterministic lead scoring function.
- * Evaluates website opportunity, commercial viability, and outreach reachability.
  */
 export function calculateLeadScore(
-  business: Pick<
-    Business,
-    "website" | "website_status" | "rating" | "review_count" | "phone" | "instagram" | "is_excluded"
-  >,
-  audit?: WebsiteAudit | null
+  business: ScoringBusiness,
+  audit?: ScoringAudit | null
 ): ScoreCalculationResult {
+  const W = SCORING_WEIGHTS;
   const reasons: ScoreReason[] = [];
   let rawScore = 0;
 
-  // -------------------------------------------------------------
-  // 1. Website Opportunity Signals (Max ~40 pts)
-  // -------------------------------------------------------------
-  const hasNoWebsite =
-    business.website_status === "NO_WEBSITE" ||
-    !business.website ||
-    business.website.trim() === "";
+  const add = (label: string, points: number, category: ScoreReason["category"]) => {
+    rawScore += points;
+    reasons.push({ label, points, type: points < 0 || category === "penalty" ? "negative" : "positive", category });
+  };
 
-  if (hasNoWebsite) {
-    rawScore += SCORING_WEIGHTS.NO_WEBSITE;
-    reasons.push({
-      label: "Web sitesi bulunmuyor (Yeni site fırsatı)",
-      points: SCORING_WEIGHTS.NO_WEBSITE,
-      type: "positive",
-      category: "website",
-    });
-  } else if (business.website_status === "UNREACHABLE") {
-    rawScore += SCORING_WEIGHTS.UNREACHABLE_WEBSITE;
-    reasons.push({
-      label: "Web sitesi çökmüş / erişilemez durumda",
-      points: SCORING_WEIGHTS.UNREACHABLE_WEBSITE,
-      type: "positive",
-      category: "website",
-    });
-  } else if (audit) {
-    // We have an active audit to inspect
-    if (!audit.has_viewport) {
-      rawScore += SCORING_WEIGHTS.MISSING_VIEWPORT;
-      reasons.push({
-        label: "Mobil uyumlu değil (Viewport etiketi eksik)",
-        points: SCORING_WEIGHTS.MISSING_VIEWPORT,
-        type: "positive",
-        category: "website",
-      });
-    }
+  const { capped } = scoreWebsite(business, audit, add);
 
-    if ((audit.response_time_ms || 0) > 1500) {
-      rawScore += SCORING_WEIGHTS.SLOW_RESPONSE;
-      reasons.push({
-        label: `Yavaş web sitesi (${audit.response_time_ms} ms yanıt süresi)`,
-        points: SCORING_WEIGHTS.SLOW_RESPONSE,
-        type: "positive",
-        category: "website",
-      });
-    }
-
-    if (!audit.is_https) {
-      rawScore += SCORING_WEIGHTS.MISSING_SSL;
-      reasons.push({
-        label: "SSL güvenlik sertifikası yok (HTTP)",
-        points: SCORING_WEIGHTS.MISSING_SSL,
-        type: "positive",
-        category: "website",
-      });
-    }
-
-    if (audit.deep_audit_data && !audit.deep_audit_data.hasWhatsApp) {
-      rawScore += SCORING_WEIGHTS.MISSING_WHATSAPP;
-      reasons.push({
-        label: "Hızlı WhatsApp butonu bulunmuyor (Dönüşüm kaybı)",
-        points: SCORING_WEIGHTS.MISSING_WHATSAPP,
-        type: "positive",
-        category: "website",
-      });
-    }
-
-    if (audit.technologies?.includes("WordPress") && (audit.response_time_ms || 0) > 1000) {
-      rawScore += SCORING_WEIGHTS.HEAVY_WORDPRESS;
-      reasons.push({
-        label: "Ağır WordPress altyapısı ve yavaş yükleme",
-        points: SCORING_WEIGHTS.HEAVY_WORDPRESS,
-        type: "positive",
-        category: "website",
-      });
-    }
-
-    // Negative penalty for modern, fast, well-built sites
-    const isModernStack =
-      audit.technologies?.includes("Next.js") || audit.technologies?.includes("React");
-    const isFast = (audit.response_time_ms || 0) < 600;
-    if (isModernStack && isFast && audit.is_https && audit.has_viewport && audit.meta_description) {
-      rawScore += SCORING_WEIGHTS.MODERN_FAST_SITE_PENALTY;
-      reasons.push({
-        label: "Modern, hızlı ve eksiksiz web sitesi mevcut",
-        points: SCORING_WEIGHTS.MODERN_FAST_SITE_PENALTY,
-        type: "negative",
-        category: "website",
-      });
-    }
-  }
-
-  // -------------------------------------------------------------
-  // 2. Commercial Viability & Reputation (Max ~35 pts)
-  // -------------------------------------------------------------
   const reviews = business.review_count || 0;
-  if (reviews >= 100) {
-    rawScore += SCORING_WEIGHTS.REVIEWS_100_PLUS;
-    reasons.push({
-      label: `100'den fazla Google yorumu (${reviews} değerlendirme)`,
-      points: SCORING_WEIGHTS.REVIEWS_100_PLUS,
-      type: "positive",
-      category: "reputation",
-    });
-  } else if (reviews >= 30) {
-    rawScore += SCORING_WEIGHTS.REVIEWS_30_TO_99;
-    reasons.push({
-      label: `Güçlü müşteri ilgisi (${reviews} Google yorumu)`,
-      points: SCORING_WEIGHTS.REVIEWS_30_TO_99,
-      type: "positive",
-      category: "reputation",
-    });
-  } else if (reviews >= 10) {
-    rawScore += SCORING_WEIGHTS.REVIEWS_10_TO_29;
-    reasons.push({
-      label: `Düzenli müşteri yorumu (${reviews} Google yorumu)`,
-      points: SCORING_WEIGHTS.REVIEWS_10_TO_29,
-      type: "positive",
-      category: "reputation",
-    });
-  } else if (reviews > 0) {
-    rawScore += SCORING_WEIGHTS.REVIEWS_UNDER_10;
-    reasons.push({
-      label: `Google incelemeleri mevcut (${reviews} yorum)`,
-      points: SCORING_WEIGHTS.REVIEWS_UNDER_10,
-      type: "positive",
-      category: "reputation",
-    });
-  }
+  if (reviews > 1000) add(`Çok büyük işletme / zincir olabilir (${reviews} yorum)`, W.REVIEWS_HUGE_PENALTY, "reputation");
+  else if (reviews >= 400) add(`Yoğun müşteri trafiği (${reviews} yorum)`, W.REVIEWS_LARGE, "reputation");
+  else if (reviews >= 20) add(`Aktif ve oturmuş işletme (${reviews} yorum)`, W.REVIEWS_SWEET_SPOT, "reputation");
+  else if (reviews >= 5) add(`Düzenli müşteri yorumu (${reviews} yorum)`, W.REVIEWS_SOME, "reputation");
+  else if (reviews > 0) add(`Az yorum (${reviews})`, W.REVIEWS_FEW, "reputation");
 
   const rating = business.rating;
   if (rating !== null && rating !== undefined) {
-    if (rating >= 4.5) {
-      rawScore += SCORING_WEIGHTS.RATING_4_5_PLUS;
-      reasons.push({
-        label: `Yüksek müşteri memnuniyeti (★ ${rating})`,
-        points: SCORING_WEIGHTS.RATING_4_5_PLUS,
-        type: "positive",
-        category: "reputation",
-      });
-    } else if (rating >= 4.0) {
-      rawScore += SCORING_WEIGHTS.RATING_4_0_TO_4_4;
-      reasons.push({
-        label: `İyi müşteri puanı (★ ${rating})`,
-        points: SCORING_WEIGHTS.RATING_4_0_TO_4_4,
-        type: "positive",
-        category: "reputation",
-      });
-    } else if (rating >= 3.5) {
-      rawScore += SCORING_WEIGHTS.RATING_3_5_TO_3_9;
-      reasons.push({
-        label: `Orta müşteri puanı (★ ${rating})`,
-        points: SCORING_WEIGHTS.RATING_3_5_TO_3_9,
-        type: "positive",
-        category: "reputation",
-      });
-    }
+    if (rating >= 4.3) add(`Yüksek müşteri memnuniyeti (★ ${rating})`, W.RATING_HIGH, "reputation");
+    else if (rating >= 3.8) add(`İyi müşteri puanı (★ ${rating})`, W.RATING_OK, "reputation");
   }
 
-  // -------------------------------------------------------------
-  // 3. Outreach Reachability (Max ~25 pts)
-  // -------------------------------------------------------------
-  if (business.phone && business.phone.trim()) {
-    rawScore += SCORING_WEIGHTS.PHONE_AVAILABLE;
-    reasons.push({
-      label: "Doğrudan telefon numarası mevcut",
-      points: SCORING_WEIGHTS.PHONE_AVAILABLE,
-      type: "positive",
-      category: "reachability",
-    });
-  }
+  const phone = getPhoneInfo(business.phone);
+  if (!business.phone?.trim()) add("Telefon numarası yok", W.NO_PHONE_PENALTY, "reachability");
+  else if (phone.type === "mobile") add("Cep telefonu: sahibine direkt ulaşım + WhatsApp", W.MOBILE_PHONE, "reachability");
+  else if (phone.type === "landline") add("Sabit hat telefonu mevcut", W.LANDLINE_PHONE, "reachability");
+  else if (phone.type === "corporate") add("0850/444 kurumsal hat (zincir/büyük firma işareti)", W.CORPORATE_PHONE_PENALTY, "reachability");
+  else add("Telefon numarası mevcut", W.OTHER_PHONE, "reachability");
 
-  if (business.instagram && business.instagram.trim()) {
-    rawScore += SCORING_WEIGHTS.INSTAGRAM_AVAILABLE;
-    reasons.push({
-      label: "Instagram profili mevcut",
-      points: SCORING_WEIGHTS.INSTAGRAM_AVAILABLE,
-      type: "positive",
-      category: "reachability",
-    });
-  }
-
+  if (business.instagram?.trim()) add("Instagram profili mevcut", W.INSTAGRAM_AVAILABLE, "reachability");
   if (audit?.contact_emails && audit.contact_emails.length > 0) {
-    rawScore += SCORING_WEIGHTS.EMAIL_DISCOVERED;
-    reasons.push({
-      label: "Web sitesinden e-posta adresi tespit edildi",
-      points: SCORING_WEIGHTS.EMAIL_DISCOVERED,
-      type: "positive",
-      category: "reachability",
-    });
+    add("Siteden e-posta adresi bulundu", W.EMAIL_DISCOVERED, "reachability");
   }
 
-  // -------------------------------------------------------------
-  // 4. Penalties / Adjustments
-  // -------------------------------------------------------------
-  if (business.is_excluded) {
-    rawScore += SCORING_WEIGHTS.EXCLUDED_PENALTY;
-    reasons.push({
-      label: "İşletme hariç tutulmuş / elenmiş",
-      points: SCORING_WEIGHTS.EXCLUDED_PENALTY,
-      type: "negative",
-      category: "penalty",
-    });
-  }
+  if (business.is_excluded) add("İşletme hariç tutulmuş", W.EXCLUDED_PENALTY, "penalty");
 
-  // Clamp score strictly between 0 and 100
-  const finalScore = Math.min(100, Math.max(0, rawScore));
-  const priority = getPriorityFromScore(finalScore);
+  let finalScore = Math.min(100, Math.max(0, rawScore));
+  if (capped) finalScore = Math.min(finalScore, W.HEALTHY_SITE_SCORE_CAP);
 
   return {
     score: finalScore,
-    priority,
+    priority: getPriorityFromScore(finalScore),
     reasons,
   };
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Business } from "@/types/business";
+import { DemoAction, DemoView } from "@/types/demo";
 import { DEMO_TEMPLATES, matchDemoTemplate } from "@/data/demo-templates";
 import { demoUrl, slugFromName, validateSlug } from "@/lib/demo-slug";
 import { createDemoPromptAction, markDemoSentAction, saveDemoAction } from "../actions";
@@ -9,26 +10,115 @@ import { createDemoPromptAction, markDemoSentAction, saveDemoAction } from "../a
 // yaytech-demos/scripts/cleanup.mjs deletes demos older than this unless they are marked keep.
 const DEMO_LIFETIME_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const VISIBLE_VIEWS = 8;
+
+const ACTION_LABEL: Record<DemoAction, string> = {
+  whatsapp: "WhatsApp'a bastı",
+  call: "Aramaya bastı",
+  maps: "Haritayı açtı",
+  instagram: "Instagram'a baktı",
+};
+
+interface DemoState {
+  demo_url: string | null;
+  demo_created_at: string | null;
+  demo_sent_at: string | null;
+  demo_view_count: number;
+  demo_last_viewed_at: string | null;
+  demo_deleted_at: string | null;
+}
 
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 }
 
-function statusLine(b: {
-  demo_created_at: string | null;
-  demo_sent_at: string | null;
-  demo_view_count: number;
-}): string | null {
-  if (!b.demo_created_at) return null;
-  const daysLeft = DEMO_LIFETIME_DAYS - Math.floor((Date.now() - new Date(b.demo_created_at).getTime()) / DAY_MS);
+function dateTime(iso: string): string {
+  return new Date(iso).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+function timeAgo(iso: string): string {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "az önce";
+  if (minutes < 60) return `${minutes} dk önce`;
+  if (minutes < 24 * 60) return `${Math.floor(minutes / 60)} sa önce`;
+  return `${Math.floor(minutes / (24 * 60))} gün önce`;
+}
+
+function duration(seconds: number): string {
+  if (seconds < 60) return `${seconds} sn`;
+  const rest = seconds % 60;
+  return rest ? `${Math.floor(seconds / 60)} dk ${rest} sn` : `${Math.floor(seconds / 60)} dk`;
+}
+
+function place(v: DemoView): string | null {
+  const parts = [v.city, v.country && v.country !== "TR" ? v.country : null].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
+function statusLine(d: DemoState): string | null {
+  if (!d.demo_created_at) return null;
+  const daysLeft = DEMO_LIFETIME_DAYS - Math.floor((Date.now() - new Date(d.demo_created_at).getTime()) / DAY_MS);
   return [
-    `Oluşturuldu ${shortDate(b.demo_created_at)}`,
-    b.demo_sent_at && `Gönderildi ${shortDate(b.demo_sent_at)}`,
-    b.demo_view_count > 0 && `${b.demo_view_count} kez açıldı`,
-    daysLeft > 0 ? `${daysLeft} gün sonra silinir` : "30 günlük süre doldu",
+    `Oluşturuldu ${shortDate(d.demo_created_at)}`,
+    d.demo_sent_at && `Gönderildi ${shortDate(d.demo_sent_at)}`,
+    d.demo_deleted_at
+      ? `Silindi ${shortDate(d.demo_deleted_at)}`
+      : daysLeft > 0
+      ? `${daysLeft} gün sonra silinir`
+      : "30 günlük süre doldu",
   ]
     .filter(Boolean)
     .join(" · ");
+}
+
+function ViewStats({ views, demo }: { views: DemoView[]; demo: DemoState }) {
+  const [showAll, setShowAll] = useState(false);
+  if (demo.demo_view_count === 0) {
+    return <p className="text-slate-400">{demo.demo_sent_at ? "Henüz açılmadı." : "Gönderilince açılışlar burada görünür."}</p>;
+  }
+
+  // A null visitor id (storage blocked) cannot be matched, so it counts as its own person.
+  const people = new Set(views.map((v) => v.visitor_id || v.id)).size;
+  const actions = [...new Set(views.flatMap((v) => v.actions))];
+  const visible = showAll ? views : views.slice(0, VISIBLE_VIEWS);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-bold text-slate-950 text-sm">
+          {demo.demo_view_count} açılış · {people} kişi
+        </span>
+        {demo.demo_last_viewed_at && <span className="text-slate-500">son {timeAgo(demo.demo_last_viewed_at)}</span>}
+        {actions.map((a) => (
+          <span key={a} className="px-2 py-0.5 rounded-md font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            {ACTION_LABEL[a]}
+          </span>
+        ))}
+      </div>
+
+      <ul className="divide-y divide-slate-100 border border-slate-200/80 rounded-xl bg-slate-50/50">
+        {visible.map((v) => (
+          <li key={v.id} className="px-3.5 py-2.5 flex flex-wrap gap-x-3 gap-y-1 text-slate-600">
+            <span className="font-semibold text-slate-900 whitespace-nowrap">{dateTime(v.created_at)}</span>
+            {place(v) && <span>{place(v)}</span>}
+            <span>{[v.os, v.browser].filter(Boolean).join(" · ")}</span>
+            {v.duration_seconds !== null && <span>{duration(v.duration_seconds)}</span>}
+            {v.max_scroll !== null && <span>%{v.max_scroll} kaydırdı</span>}
+            {v.actions.map((a) => (
+              <span key={a} className="font-semibold text-emerald-700">
+                {ACTION_LABEL[a]}
+              </span>
+            ))}
+          </li>
+        ))}
+      </ul>
+      {views.length > VISIBLE_VIEWS && (
+        <button onClick={() => setShowAll((s) => !s)} className="font-semibold text-slate-500 hover:text-slate-950">
+          {showAll ? "Daha az göster" : `Tümünü göster (${views.length})`}
+        </button>
+      )}
+    </div>
+  );
 }
 
 const inputClass =
@@ -38,7 +128,7 @@ const secondaryButtonClass =
 const primaryButtonClass =
   "h-10 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold shadow-xs transition disabled:opacity-50";
 
-export function DemoCard({ business }: { business: Business }) {
+export function DemoCard({ business, initialViews }: { business: Business; initialViews: DemoView[] }) {
   const [template, setTemplate] = useState(
     business.demo_template || matchDemoTemplate(business.category)?.id || DEMO_TEMPLATES[0].id
   );
@@ -46,12 +136,15 @@ export function DemoCard({ business }: { business: Business }) {
   const [prompt, setPrompt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [urlInput, setUrlInput] = useState(business.demo_url || "");
-  const [demo, setDemo] = useState({
+  const [demo, setDemo] = useState<DemoState>({
     demo_url: business.demo_url ?? null,
     demo_created_at: business.demo_created_at ?? null,
     demo_sent_at: business.demo_sent_at ?? null,
     demo_view_count: business.demo_view_count ?? 0,
+    demo_last_viewed_at: business.demo_last_viewed_at ?? null,
+    demo_deleted_at: business.demo_deleted_at ?? null,
   });
+  const [views, setViews] = useState(initialViews);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -83,7 +176,8 @@ export function DemoCard({ business }: { business: Business }) {
     startTransition(async () => {
       const res = await saveDemoAction(business.id, template, urlInput);
       if (res.success && res.demo) {
-        setDemo((d) => ({ ...d, ...res.demo }));
+        if (res.demo.demo_url !== demo.demo_url) setViews([]);
+        setDemo(res.demo);
         setUrlInput(res.demo.demo_url ?? "");
         setMessage("Demo linki kaydedildi.");
       } else {
@@ -112,9 +206,10 @@ export function DemoCard({ business }: { business: Business }) {
             {status || "Agent için prompt oluştur, dönen linki buraya kaydet."}
           </p>
         </div>
-        {demo.demo_url && (
+        {demo.demo_url && !demo.demo_deleted_at && (
           <a
-            href={demo.demo_url}
+            // ?me=1 marks this browser as the owner's so its visits are never counted.
+            href={`${demo.demo_url}?me=1`}
             target="_blank"
             rel="noreferrer"
             className="text-xs font-semibold text-blue-600 hover:underline self-start sm:self-auto"
@@ -125,6 +220,8 @@ export function DemoCard({ business }: { business: Business }) {
       </div>
 
       <div className="space-y-5 text-xs">
+        {demo.demo_url && <ViewStats views={views} demo={demo} />}
+
         <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-3 sm:items-start">
           <select value={template} onChange={(e) => setTemplate(e.target.value)} className={inputClass}>
             {DEMO_TEMPLATES.map((t) => (

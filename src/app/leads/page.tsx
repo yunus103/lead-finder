@@ -13,7 +13,7 @@ interface LeadsPageProps {
     websiteStatus?: string;
     priority?: string;
     crmTab?: string;
-    sortBy?: "score" | "newest";
+    sortBy?: "score" | "newest" | "demo_viewed";
     mobile?: string;
     page?: string;
   }>;
@@ -47,6 +47,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           ? "OPPORTUNITY"
           : undefined,
       followUpDue: activeCrmTab === "follow_ups" ? true : undefined,
+      hasDemo: activeCrmTab === "demos" ? true : undefined,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     });
@@ -86,6 +87,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     { label: "Aranacaklar", value: "to_call" },
     { label: "Geri aranacaklar", value: "follow_ups" },
     { label: "Sıcak fırsatlar", value: "opportunities" },
+    { label: "Demolar", value: "demos" },
     { label: "Dışlananlar", value: "excluded" },
   ];
 
@@ -215,6 +217,16 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
               >
                 En yeni
               </Link>
+              <Link
+                href={buildHref({ sortBy: "demo_viewed" })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                  params.sortBy === "demo_viewed"
+                    ? "bg-white text-slate-950 shadow-xs"
+                    : "text-slate-600 hover:text-slate-950"
+                }`}
+              >
+                Demo açılışı
+              </Link>
             </div>
 
           </div>
@@ -326,6 +338,23 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                           {b.is_excluded && (
                             <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded">
                               Dışlandı
+                            </span>
+                          )}
+
+                          {b.demo_url && !b.demo_deleted_at && (
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
+                                b.demo_last_viewed_at
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                  : "bg-slate-100 text-slate-600 border-slate-200"
+                              }`}
+                              title={b.demo_last_viewed_at ? new Date(b.demo_last_viewed_at).toLocaleString("tr-TR") : undefined}
+                            >
+                              {b.demo_last_viewed_at
+                                ? `Demo ${b.demo_view_count}× açıldı · ${new Date(b.demo_last_viewed_at).toLocaleDateString("tr-TR")}`
+                                : b.demo_sent_at
+                                ? "Demo gönderildi"
+                                : "Demo hazır"}
                             </span>
                           )}
 

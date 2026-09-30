@@ -281,7 +281,8 @@ export async function getBusinesses(options?: {
   isExcluded?: boolean;
   followUpDue?: boolean;
   mobileOnly?: boolean;
-  sortBy?: "score" | "newest";
+  hasDemo?: boolean;
+  sortBy?: "score" | "newest" | "demo_viewed";
   limit?: number;
   offset?: number;
 }): Promise<{ businesses: Business[]; total: number }> {
@@ -291,6 +292,10 @@ export async function getBusinesses(options?: {
 
   if (options?.sortBy === "newest") {
     query = query.order("created_at", { ascending: false });
+  } else if (options?.sortBy === "demo_viewed") {
+    query = query
+      .order("demo_last_viewed_at", { ascending: false, nullsFirst: false })
+      .order("demo_created_at", { ascending: false, nullsFirst: false });
   } else {
     // Default: prioritize highest lead score first
     query = query
@@ -332,6 +337,9 @@ export async function getBusinesses(options?: {
   }
   if (options?.priority) {
     query = query.eq("priority", options.priority);
+  }
+  if (options?.hasDemo) {
+    query = query.not("demo_url", "is", null);
   }
   if (options?.mobileOnly) {
     // normalizePhone stores Turkish mobiles as 905XXXXXXXXX

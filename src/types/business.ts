@@ -36,6 +36,7 @@ export interface Business {
   demo_sent_at?: string | null;
   demo_view_count?: number;
   demo_last_viewed_at?: string | null;
+  demo_deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }

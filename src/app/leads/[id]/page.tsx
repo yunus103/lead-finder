@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getBusinessWithSources } from "@/services/business-service";
 import { getLatestWebsiteAudit } from "@/services/website-service";
 import { getLeadActivities } from "@/services/crm-service";
+import { getDemoViews } from "@/services/demo-service";
 import { WebsiteIntelligenceCard } from "./website-intelligence-card";
 import { LeadScoreCard } from "./lead-score-card";
 import { CrmCockpit } from "./crm-cockpit";
@@ -30,6 +31,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   }
 
   const { business: b, sources } = data;
+  const demoViews = b.demo_slug ? await getDemoViews(b.id, b.demo_slug) : [];
   const mapsUrl =
     sources.find((s) => s.provider === "google_maps")?.source_url ||
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -186,7 +188,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
       {/* CRM & Cold-Calling Cockpit */}
       <CrmCockpit business={b} initialActivities={activities} latestAudit={latestAudit} />
 
-      <DemoCard business={b} />
+      <DemoCard business={b} initialViews={demoViews} />
 
       {/* Lead Scoring */}
       {/* Keyed so a router.refresh() after a scan remounts it with the new score */}

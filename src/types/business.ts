@@ -29,6 +29,13 @@ export interface Business {
   google_maps_url?: string | null;
   score_reasons?: import("./scoring").ScoreReason[];
   last_scanned_at?: string | null;
+  demo_template?: string | null;
+  demo_slug?: string | null;
+  demo_url?: string | null;
+  demo_created_at?: string | null;
+  demo_sent_at?: string | null;
+  demo_view_count?: number;
+  demo_last_viewed_at?: string | null;
   created_at: string;
   updated_at: string;
 }

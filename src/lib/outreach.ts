@@ -57,7 +57,7 @@ export interface OutreachContext {
   audit?: Pick<AuditFields, "status" | "has_viewport" | "is_https" | "deep_audit_data"> | null;
 }
 
-type Angle =
+export type Angle =
   | "instagram_only"
   | "no_website"
   | "down"
@@ -68,7 +68,7 @@ type Angle =
   | "slow"
   | "generic";
 
-function pickAngle(ctx: OutreachContext): Angle {
+export function pickAngle(ctx: OutreachContext): Angle {
   if (ctx.website_status === "NO_WEBSITE") return ctx.instagram ? "instagram_only" : "no_website";
 
   const audit = ctx.audit;

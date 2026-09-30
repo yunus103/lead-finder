@@ -6,6 +6,7 @@ import { getLeadActivities } from "@/services/crm-service";
 import { WebsiteIntelligenceCard } from "./website-intelligence-card";
 import { LeadScoreCard } from "./lead-score-card";
 import { CrmCockpit } from "./crm-cockpit";
+import { DemoCard } from "./demo-card";
 
 export const dynamic = "force-dynamic";
 // The PageSpeed action runs from this page and can take ~30s.
@@ -184,6 +185,8 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
 
       {/* CRM & Cold-Calling Cockpit */}
       <CrmCockpit business={b} initialActivities={activities} latestAudit={latestAudit} />
+
+      <DemoCard business={b} />
 
       {/* Lead Scoring */}
       {/* Keyed so a router.refresh() after a scan remounts it with the new score */}

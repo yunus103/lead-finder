@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ingestBusiness } from "@/services/business-service";
 import { IngestBusinessInput } from "@/types/business";
 import { CallOutcome, CrmStatus } from "@/types/crm";
+import { demoUrl, validateSlug } from "@/lib/demo-slug";
 
 // Client components keep their own optimistic state after these actions, so they don't
 // call revalidatePath: that would re-render the whole current page inside the action response.
@@ -152,5 +153,41 @@ export async function getNextLeadAction(
     return { success: true, nextId };
   } catch (error: unknown) {
     return { success: false, error: errorMessage(error), nextId: null };
+  }
+}
+
+export async function createDemoPromptAction(businessId: string, templateId: string, slug: string) {
+  const slugError = validateSlug(slug);
+  if (slugError) return { success: false, error: slugError, prompt: null, warning: null };
+  try {
+    const { createDemoPrompt } = await import("@/services/demo-service");
+    const { prompt, warning } = await createDemoPrompt(businessId, templateId, slug);
+    return { success: true, prompt, warning };
+  } catch (error: unknown) {
+    return { success: false, error: errorMessage(error), prompt: null, warning: null };
+  }
+}
+
+export async function saveDemoAction(businessId: string, template: string, url: string) {
+  // The agent may change the slug (e.g. on a collision), so the saved slug always comes from the link.
+  const slug = url.trim().match(/^https:\/\/([a-z0-9-]+)\.yaytechstudio\.com\/?$/)?.[1];
+  const slugError = slug ? validateSlug(slug) : "Link https://<slug>.yaytechstudio.com biçiminde olmalı.";
+  if (!slug || slugError) return { success: false, error: slugError, demo: null };
+  try {
+    const { saveDemo } = await import("@/services/demo-service");
+    const demo = await saveDemo(businessId, template, slug, demoUrl(slug));
+    return { success: true, demo };
+  } catch (error: unknown) {
+    return { success: false, error: errorMessage(error), demo: null };
+  }
+}
+
+export async function markDemoSentAction(businessId: string, url: string) {
+  try {
+    const { markDemoSent } = await import("@/services/demo-service");
+    const sentAt = await markDemoSent(businessId, url);
+    return { success: true, sentAt };
+  } catch (error: unknown) {
+    return { success: false, error: errorMessage(error), sentAt: null };
   }
 }

@@ -143,3 +143,57 @@ export class GoogleMapsProvider implements IDiscoveryProvider {
     }
   }
 }
+
+export interface PlaceReview {
+  author: string;
+  rating: number;
+  text: string;
+}
+
+export interface PlaceDetails {
+  /** Google's localized lines, Monday first (e.g. "Pazartesi: 09:00–21:00"). */
+  weekdayHours: string[];
+  /** At most 5: the Places API never returns more and picks them itself. */
+  reviews: PlaceReview[];
+}
+
+interface GooglePlaceDetailsResponse {
+  regularOpeningHours?: { weekdayDescriptions?: string[] };
+  reviews?: Array<{
+    rating?: number;
+    text?: { text?: string };
+    originalText?: { text?: string };
+    authorAttribution?: { displayName?: string };
+  }>;
+  error?: { message: string };
+}
+
+/** Hours and reviews are fetched on demand (one call per demo) instead of during discovery, where they would bill every result. */
+export async function fetchPlaceDetails(placeId: string): Promise<PlaceDetails> {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_PLACES_API_KEY tanımlı değil.");
+
+  const response = await fetch(
+    `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=tr`,
+    {
+      headers: {
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "regularOpeningHours,reviews",
+      },
+    }
+  );
+  const data = (await response.json()) as GooglePlaceDetailsResponse;
+  if (!response.ok || data.error) {
+    throw new Error(`Google Places API Hatası (${response.status}): ${data.error?.message || response.statusText}`);
+  }
+
+  return {
+    weekdayHours: data.regularOpeningHours?.weekdayDescriptions ?? [],
+    reviews: (data.reviews ?? []).map((r) => ({
+      author: r.authorAttribution?.displayName?.trim() || "",
+      rating: r.rating ?? 0,
+      // originalText keeps the reviewer's own words; text may be machine-translated.
+      text: (r.originalText?.text || r.text?.text || "").trim(),
+    })),
+  };
+}

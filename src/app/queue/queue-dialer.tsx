@@ -205,17 +205,17 @@ export function QueueDialer({
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-          <span className="bg-slate-950 text-white px-3 py-1.5 rounded-lg text-xs font-mono font-semibold tracking-tight">
-            {meta.remainingCount} Aday Kaldı
+          <span className="text-xs text-slate-500">
+            <strong className="text-slate-950">{meta.remainingCount}</strong> aday kaldı
           </span>
           <Link
             href={`/leads/${lead.id}`}
             target="_blank"
             className="text-xs font-semibold text-slate-500 hover:text-slate-950 transition flex items-center gap-1"
-            title="Yeni sekmede tam kurumsal ve teknik detayları aç"
+            title="Detay sayfasını yeni sekmede aç"
           >
-            <span>Detaylı İncele</span>
-            <span className="font-mono">↗</span>
+            <span>Detay</span>
+            <span>↗</span>
           </Link>
         </div>
       </div>
@@ -231,7 +231,7 @@ export function QueueDialer({
                   lead.priority
                 )}`}
               >
-                🔥 SKOR {lead.lead_score} • {lead.priority}
+                {lead.priority} {lead.lead_score}
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${
@@ -252,10 +252,10 @@ export function QueueDialer({
                   }`}
                 ></span>
                 {lead.website_status === "NO_WEBSITE"
-                  ? "Web Sitesi Yok"
+                  ? "Site yok"
                   : lead.website_status === "HAS_WEBSITE"
-                  ? "Web Sitesi Var"
-                  : "Erişilemez"}
+                  ? "Site var"
+                  : "Site açılmıyor"}
               </span>
             </div>
 
@@ -280,7 +280,7 @@ export function QueueDialer({
                     className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-0.5 hover:underline"
                   >
                     <span>Google Haritalar</span>
-                    <span className="font-mono text-[11px]">↗</span>
+                    <span className="text-[11px]">↗</span>
                   </a>
                 </>
               )}
@@ -291,19 +291,17 @@ export function QueueDialer({
           <div className="bg-slate-50/80 border border-slate-200/90 rounded-lg p-3.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-amber-500 text-base">★</span>
-              <span className="font-mono font-bold text-sm text-slate-950">{lead.rating || "—"}</span>
+              <span className="font-bold text-sm text-slate-950">{lead.rating || "—"}</span>
               <span className="text-xs text-slate-500">({lead.review_count || 0} yorum)</span>
             </div>
             <div className="text-xs font-semibold text-slate-600">
-              {lead.contact_attempts ? `${lead.contact_attempts} kez arandı` : "İlk Arama"}
+              {lead.contact_attempts ? `${lead.contact_attempts} kez arandı` : "İlk arama"}
             </div>
           </div>
 
           {/* Why This Lead is Valuable (Score Reasons) */}
           <div className="space-y-2.5">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-              Tespit Edilen Fırsatlar
-            </span>
+            <span className="text-xs font-semibold text-slate-500 block">Neden aranmalı</span>
             <div className="space-y-2">
               {lead.score_reasons && lead.score_reasons.length > 0 ? (
                 lead.score_reasons.slice(0, 4).map((r, i) => (
@@ -333,12 +331,12 @@ export function QueueDialer({
 
           {lead.website && (
             <div className="text-xs text-slate-500 flex items-center gap-1.5 pt-2 border-t border-slate-100">
-              <span>Mevcut Site:</span>
+              <span>Mevcut site:</span>
               <a
                 href={lead.website}
                 target="_blank"
                 rel="noreferrer"
-                className="font-mono text-blue-600 hover:underline truncate max-w-[260px]"
+                className="text-blue-600 hover:underline truncate max-w-[260px]"
               >
                 {lead.website_domain || lead.website} ↗
               </a>
@@ -351,16 +349,13 @@ export function QueueDialer({
           {/* Card 1: Sales Opening Script (Teleprompter style) */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🎙️</span> Satış Açılış Metni
-              </span>
+              <span className="text-xs font-semibold text-slate-500">Açılış metni</span>
               <button
                 type="button"
                 onClick={copyPitch}
                 className="h-7 px-3 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1 shadow-2xs"
               >
-                <span>{copiedPitch ? "✓" : "📋"}</span>
-                <span>{copiedPitch ? "Kopyalandı" : "Metni Kopyala"}</span>
+                <span>{copiedPitch ? "✓ Kopyalandı" : "Kopyala"}</span>
               </button>
             </div>
             <p className="text-sm font-medium text-slate-800 leading-relaxed bg-slate-50/70 border-l-2 border-blue-600 rounded-r-lg p-3">
@@ -370,17 +365,9 @@ export function QueueDialer({
 
           {/* Card 2: The Direct Contact & Call Terminal */}
           <div className="bg-slate-950 text-white rounded-xl p-4 sm:p-5 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-widest font-mono text-slate-400 font-semibold flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Doğrudan İletişim Hattı
-              </span>
-              <span className="text-xs text-slate-400 font-mono">Türkiye (+90)</span>
-            </div>
-
             {/* Phone Number: Guaranteed 1 line, bold, zero overflow */}
             <div className="font-mono text-2xl sm:text-4xl font-extrabold text-white tracking-tight select-all leading-tight truncate">
-              {rawPhone || "Telefon Kaydı Yok"}
+              {rawPhone || "Telefon yok"}
             </div>
             {rawPhone && (
               <div
@@ -417,8 +404,7 @@ export function QueueDialer({
                   className="h-11 bg-slate-800 hover:bg-slate-700 active:bg-slate-800 text-white rounded-lg font-medium text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 border border-slate-700 transition shadow-xs"
                   title="Numarayı panoya kopyala"
                 >
-                  <span>{copiedPhone ? "✓" : "📋"}</span>
-                  <span className="truncate">{copiedPhone ? "Kopyalandı" : "Kopyala"}</span>
+                  <span className="truncate">{copiedPhone ? "✓ Kopyalandı" : "Kopyala"}</span>
                 </button>
 
                 {/* WhatsApp */}
@@ -449,11 +435,9 @@ export function QueueDialer({
           {/* Card 3: 1-Click Fast Outcome Logger (Auto-Advances to Next Lead) */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Sonucu Kaydet & Sıradakine Geç
-              </span>
+              <span className="text-xs font-semibold text-slate-500">Sonucu kaydet ve sıradakine geç</span>
               {feedback && (
-                <span className="text-xs font-semibold text-blue-600 animate-pulse">
+                <span className="text-xs font-semibold text-blue-600">
                   {feedback}
                 </span>
               )}
@@ -465,11 +449,11 @@ export function QueueDialer({
                 type="button"
                 disabled={isProcessing}
                 onClick={() => handleOutcome("no_answer", "Cevap yok / meşgul.")}
-                className="h-16 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] disabled:opacity-50 shadow-2xs"
+                className="h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] border-slate-200 bg-white hover:border-slate-400 text-slate-800 disabled:opacity-50"
                 title="Arama denemesini kaydeder ve sıradaki adaya geçer"
               >
                 <span className="text-lg">📵</span>
-                <span className="text-xs font-semibold">Cevap Yok</span>
+                <span className="text-xs font-semibold">Cevap yok</span>
               </button>
 
               {/* Geri Ara */}
@@ -480,11 +464,11 @@ export function QueueDialer({
                 className={`h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] ${
                   showFollowUpBox
                     ? "border-amber-500 bg-amber-50 text-amber-950 font-bold shadow-xs"
-                    : "border-slate-200 bg-white hover:bg-amber-50/40 text-slate-800 shadow-2xs"
+                    : "border-slate-200 bg-white hover:border-amber-300 text-slate-800"
                 }`}
               >
                 <span className="text-lg">⏰</span>
-                <span className="text-xs font-semibold">Geri Ara</span>
+                <span className="text-xs font-semibold">Geri ara</span>
               </button>
 
               {/* İlgilendi (The Hero Outcome!) */}
@@ -494,10 +478,10 @@ export function QueueDialer({
                 onClick={() =>
                   handleOutcome("interested", "Görüşme olumlu, randevu veya detay istendi.")
                 }
-                className="h-16 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] shadow-sm font-bold"
+                className="h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] border-slate-200 bg-white hover:border-blue-300 text-slate-800"
               >
                 <span className="text-lg">🔥</span>
-                <span className="text-xs">İlgilendi</span>
+                <span className="text-xs font-semibold">İlgilendi</span>
               </button>
 
               {/* Red */}
@@ -505,7 +489,7 @@ export function QueueDialer({
                 type="button"
                 disabled={isProcessing}
                 onClick={() => handleOutcome("rejected", "Web sitesi istemiyor.")}
-                className="h-16 rounded-lg border border-slate-200 bg-white hover:bg-rose-50/40 text-slate-800 transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] shadow-2xs"
+                className="h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] border-slate-200 bg-white hover:border-rose-300 text-slate-800"
               >
                 <span className="text-lg">❌</span>
                 <span className="text-xs font-semibold">Red</span>
@@ -516,7 +500,7 @@ export function QueueDialer({
                 type="button"
                 disabled={isProcessing}
                 onClick={handleSkip}
-                className="h-16 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] shadow-2xs"
+                className="h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] border-slate-200 bg-white hover:border-slate-400 text-slate-600"
                 title="Durumu değiştirmeden sıradaki adaya geçer"
               >
                 <span className="text-lg">⏭️</span>
@@ -531,7 +515,7 @@ export function QueueDialer({
                 className={`h-16 rounded-lg border transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] ${
                   showExcludeBox
                     ? "border-slate-800 bg-slate-100 text-slate-950 font-bold"
-                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-500 shadow-2xs"
+                    : "border-slate-200 bg-white hover:border-slate-400 text-slate-500"
                 }`}
               >
                 <span className="text-lg">🚫</span>

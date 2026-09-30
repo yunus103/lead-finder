@@ -310,7 +310,7 @@ export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCock
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("no_answer", "Cevap vermedi / meşgul.")}
-            className="h-14 flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold transition active:scale-95 disabled:opacity-50"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 border-slate-200 bg-white hover:border-slate-400 text-slate-800 disabled:opacity-50"
           >
             <span className="text-base mb-0.5">📵</span>
             <span>Cevap Yok</span>
@@ -323,7 +323,7 @@ export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCock
             className={`h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 ${
               showFollowUpBox
                 ? "border-amber-400 bg-amber-100 text-amber-900 shadow-xs"
-                : "border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-800"
+                : "border-slate-200 bg-white hover:border-amber-300 text-slate-800"
             }`}
           >
             <span className="text-base mb-0.5">⏰</span>
@@ -334,7 +334,7 @@ export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCock
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("interested", "Görüşme olumlu, detaylı bilgi talep edildi.")}
-            className="h-14 flex flex-col items-center justify-center rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100 text-blue-800 text-xs font-bold transition active:scale-95"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 border-slate-200 bg-white hover:border-blue-300 text-slate-800"
           >
             <span className="text-base mb-0.5">🔥</span>
             <span>İlgilendi</span>
@@ -344,7 +344,7 @@ export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCock
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("meeting", "Toplantı veya teklif sunumu ayarlandı.")}
-            className="h-14 flex flex-col items-center justify-center rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100 text-purple-800 text-xs font-bold transition active:scale-95"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 border-slate-200 bg-white hover:border-purple-300 text-slate-800"
           >
             <span className="text-base mb-0.5">🤝</span>
             <span>Toplantı</span>
@@ -354,10 +354,10 @@ export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCock
             type="button"
             disabled={isLoggingCall}
             onClick={() => handleLogCall("rejected", "İlgilenmediğini belirtti / web sitesi istemiyor.")}
-            className="h-14 flex flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100 text-rose-800 text-xs font-bold transition active:scale-95"
+            className="h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 border-slate-200 bg-white hover:border-rose-300 text-slate-800"
           >
             <span className="text-base mb-0.5">❌</span>
-            <span>Olumsuz / Red</span>
+            <span>Red</span>
           </button>
 
           <button
@@ -366,7 +366,7 @@ export function CrmCockpit({ business, initialActivities, latestAudit }: CrmCock
             className={`h-14 flex flex-col items-center justify-center rounded-xl border text-xs font-bold transition active:scale-95 ${
               isExcluded
                 ? "border-slate-400 bg-slate-200 text-slate-800 shadow-xs"
-                : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                : "border-slate-200 bg-white hover:border-slate-400 text-slate-600"
             }`}
           >
             <span className="text-base mb-0.5">🚫</span>

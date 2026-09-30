@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDashboardData } from "@/services/dashboard-service";
+import { EXCLUSION_REASONS } from "@/types/crm";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,32 @@ function formatTimeAgo(isoString: string): string {
   } catch {
     return isoString;
   }
+}
+
+const ACTIVITY_LABEL: Record<string, { label: string; className: string }> = {
+  no_answer: { label: "Cevap yok", className: "bg-slate-100 text-slate-700 border-slate-200" },
+  callback: { label: "Geri ara", className: "bg-amber-50 text-amber-800 border-amber-200" },
+  interested: { label: "İlgilendi", className: "bg-blue-50 text-blue-800 border-blue-200" },
+  meeting: { label: "Toplantı", className: "bg-blue-50 text-blue-800 border-blue-200" },
+  proposal: { label: "Teklif", className: "bg-blue-50 text-blue-800 border-blue-200" },
+  rejected: { label: "Red", className: "bg-rose-50 text-rose-700 border-rose-200" },
+  excluded: { label: "Dışlandı", className: "bg-slate-100 text-slate-600 border-slate-200" },
+  restored: { label: "Geri alındı", className: "bg-slate-100 text-slate-600 border-slate-200" },
+};
+
+function activityLabel(type: string, outcome: string | null) {
+  if (outcome && ACTIVITY_LABEL[outcome]) return ACTIVITY_LABEL[outcome];
+  if (type === "whatsapp") return { label: "WhatsApp", className: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  if (type === "call") return { label: "Arama", className: "bg-slate-100 text-slate-700 border-slate-200" };
+  return { label: "Not", className: "bg-slate-100 text-slate-700 border-slate-200" };
+}
+
+// Older exclusion activities stored the raw reason code, e.g. "(invalid_number)".
+function readableContent(content: string): string {
+  return content.replace(/\((\w+)\)/, (match, code) => {
+    const reason = EXCLUSION_REASONS.find((r) => r.value === code);
+    return reason ? `(${reason.label})` : match;
+  });
 }
 
 function formatFollowUpDate(isoString: string): { label: string; isOverdue: boolean } {
@@ -76,19 +103,15 @@ export default async function HomePage() {
         <section className="bg-amber-50/70 border border-amber-200/90 border-l-4 border-l-amber-500 rounded-2xl p-6 shadow-xs">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-              </span>
               <h2 className="text-base font-bold text-amber-950 tracking-tight">
-                Zamanı Gelen Takip Aramaları ({dueFollowUps.length})
+                Zamanı gelen geri aramalar ({dueFollowUps.length})
               </h2>
             </div>
             <Link
               href="/leads?crmTab=follow_ups"
               className="text-xs font-bold text-amber-900 hover:underline underline-offset-4"
             >
-              Tüm Takipleri Gör →
+              Tümü →
             </Link>
           </div>
 
@@ -112,7 +135,7 @@ export default async function HomePage() {
                             : "bg-amber-100 text-amber-800 border border-amber-200"
                         }`}
                       >
-                        {timing.isOverdue ? "⚠️ Gecikmiş" : timing.label}
+                        {timing.isOverdue ? "Gecikti" : timing.label}
                       </span>
                     </div>
 
@@ -136,7 +159,7 @@ export default async function HomePage() {
                       href={`/queue?leadId=${lead.id}`}
                       className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold transition shadow-2xs"
                     >
-                      Hemen Ara →
+                      Ara →
                     </Link>
                   </div>
                 </div>
@@ -286,16 +309,7 @@ export default async function HomePage() {
                 <h2 className="text-base font-bold text-slate-950 tracking-tight">
                   Aranmaya hazır HOT adaylar
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Web sitesi fırsatı yüksek ve henüz aranmamış öncelikli adaylar
-                </p>
               </div>
-              <Link
-                href="/queue"
-                className="text-xs font-bold text-blue-600 hover:text-blue-700"
-              >
-                Sıraya Başla →
-              </Link>
             </div>
 
             {hotQueueLeads.length === 0 ? (
@@ -303,37 +317,29 @@ export default async function HomePage() {
                 Sırada bekleyen HOT aday yok. Yeni işletmeler keşfedebilir veya diğer kategorileri arayabilirsiniz.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="divide-y divide-slate-100 -mx-2">
                 {hotQueueLeads.map((lead) => (
-                  <div
+                  <Link
                     key={lead.id}
-                    className="border border-slate-200/80 hover:border-slate-300 bg-slate-50/40 hover:bg-slate-50/80 rounded-xl p-4 transition flex items-center justify-between gap-4"
+                    href={`/queue?leadId=${lead.id}`}
+                    className="group flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-slate-50 transition"
                   >
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                          {lead.lead_score} PUAN
-                        </span>
-                        <span className="text-xs font-medium text-slate-500 truncate">
-                          {[lead.category, lead.district].filter(Boolean).join(" • ")}
-                        </span>
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-950 truncate">
-                        {lead.name}
-                      </h3>
-                      <div className="font-mono text-xs font-medium text-slate-600">
-                        {lead.phone || "Telefon Yok"}
+                    <span className="shrink-0 w-9 text-center py-0.5 rounded-md font-mono text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                      {lead.lead_score}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-slate-950 truncate">{lead.name}</div>
+                      <div className="text-xs text-slate-500 truncate">
+                        {[lead.category, lead.district].filter(Boolean).join(" · ")}
                       </div>
                     </div>
-
-                    <Link
-                      href={`/queue?leadId=${lead.id}`}
-                      className="shrink-0 h-10 px-5 rounded-lg bg-slate-950 hover:bg-slate-800 active:bg-black text-white text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition"
-                    >
-                      <span>Arama Yap</span>
-                      <span className="font-mono text-sm">→</span>
-                    </Link>
-                  </div>
+                    <span className="hidden sm:block shrink-0 font-mono text-xs text-slate-600">
+                      {lead.phone || "—"}
+                    </span>
+                    <span className="shrink-0 text-xs font-bold text-slate-400 group-hover:text-blue-600 transition">
+                      Ara →
+                    </span>
+                  </Link>
                 ))}
               </div>
             )}
@@ -344,7 +350,7 @@ export default async function HomePage() {
               href="/queue"
               className="text-xs font-bold text-slate-700 hover:text-slate-950"
             >
-              Tüm Adayları Arama Sırasında Aç ({pipeline.toCall}) →
+              Arama sırasını aç ({pipeline.toCall}) →
             </Link>
           </div>
         </section>
@@ -357,9 +363,6 @@ export default async function HomePage() {
                 <h2 className="text-base font-bold text-slate-950 tracking-tight">
                   Son hareketler
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Yapılan son aramalar, sonuçlar ve kaydedilen notlar
-                </p>
               </div>
             </div>
 
@@ -368,44 +371,16 @@ export default async function HomePage() {
                 Henüz arama veya CRM hareketi kaydedilmedi.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="divide-y divide-slate-100">
                 {recentActivities.map((act) => {
-                  const isCall = act.type === "call";
-                  const isInterested = act.outcome === "interested" || act.outcome === "meeting";
-                  const isCallback = act.outcome === "callback";
-                  const isNoAnswer = act.outcome === "no_answer";
+                  const badge = activityLabel(act.type, act.outcome);
 
                   return (
-                    <div
-                      key={act.id}
-                      className="border border-slate-200/80 bg-white rounded-xl p-3.5 shadow-2xs flex items-start justify-between gap-3"
-                    >
+                    <div key={act.id} className="py-3 first:pt-0">
                       <div className="min-w-0 space-y-1">
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                              isInterested
-                                ? "bg-blue-100 text-blue-800 border border-blue-200"
-                                : isCallback
-                                ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                : isNoAnswer
-                                ? "bg-slate-100 text-slate-700 border border-slate-200"
-                                : "bg-slate-100 text-slate-800 border border-slate-200"
-                            }`}
-                          >
-                            {act.outcome === "no_answer"
-                              ? "📵 Cevap Yok"
-                              : act.outcome === "callback"
-                              ? "⏰ Geri Ara"
-                              : act.outcome === "interested"
-                              ? "🔥 İlgilendi"
-                              : act.outcome === "meeting"
-                              ? "🤝 Toplantı"
-                              : act.outcome === "rejected"
-                              ? "❌ Red"
-                              : isCall
-                              ? "📞 Arama"
-                              : "📝 İşlem"}
+                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${badge.className}`}>
+                            {badge.label}
                           </span>
                           <span className="text-xs text-slate-400">
                             {formatTimeAgo(act.created_at)}
@@ -421,18 +396,10 @@ export default async function HomePage() {
 
                         {act.content && (
                           <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">
-                            {act.content}
+                            {readableContent(act.content)}
                           </p>
                         )}
                       </div>
-
-                      <Link
-                        href={`/leads/${act.business_id}`}
-                        className="shrink-0 text-xs font-bold text-slate-500 hover:text-slate-950 p-1 transition"
-                        title="İşletme Kokpitine Git"
-                      >
-                        İncele ↗
-                      </Link>
                     </div>
                   );
                 })}
@@ -442,7 +409,7 @@ export default async function HomePage() {
 
           <div className="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <Link href="/discover" className="ml-auto font-bold text-slate-700 hover:text-slate-950">
-              Keşif & Tarama Geçmişi →
+              Keşif geçmişi →
             </Link>
           </div>
         </section>

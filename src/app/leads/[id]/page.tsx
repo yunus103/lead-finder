@@ -29,6 +29,12 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
   }
 
   const { business: b, sources } = data;
+  const mapsUrl =
+    sources.find((s) => s.provider === "google_maps")?.source_url ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${b.name} ${b.district || ""} ${b.city || ""}`
+    )}`;
+  const instagramUrl = b.instagram_normalized ? `https://instagram.com/${b.instagram_normalized}` : null;
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -37,7 +43,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
           href="/leads"
           className="text-xs text-slate-500 hover:text-slate-950 transition inline-flex items-center gap-1.5 font-bold"
         >
-          ← Aday Havuzuna Dön
+          ← İşletmeler
         </Link>
       </div>
 
@@ -45,15 +51,44 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
       <div className="border border-slate-200/90 bg-white rounded-2xl p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
           <div>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80 font-mono">
-              ● Ana Kurumsal Kayıt
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight mt-2">{b.name}</h1>
-            <p className="text-xs text-slate-500 mt-0.5">{b.category || "Kategori Belirtilmemiş"}</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">{b.name}</h1>
+            <p className="text-xs text-slate-500 mt-1">
+              {[b.category, b.district ? `${b.city} (${b.district})` : b.city].filter(Boolean).join(" · ")}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-blue-300 hover:text-blue-700 text-xs font-semibold text-slate-700 transition"
+              >
+                Google Haritalar ↗
+              </a>
+              {b.website && (
+                <a
+                  href={b.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-blue-300 hover:text-blue-700 text-xs font-semibold text-slate-700 transition"
+                >
+                  Web sitesi ↗
+                </a>
+              )}
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-pink-300 hover:text-pink-700 text-xs font-semibold text-slate-700 transition"
+                >
+                  Instagram ↗
+                </a>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <span
-              className={`px-3 py-1 rounded-lg text-xs font-bold border font-mono ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold border ${
                 b.website_status === "HAS_WEBSITE"
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : b.website_status === "NO_WEBSITE"
@@ -63,14 +98,13 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
                   : "bg-slate-100 text-slate-600 border-slate-200"
               }`}
             >
-              Web Durumu:{" "}
               {b.website_status === "HAS_WEBSITE"
-                ? "SİTE VAR"
+                ? "Site var"
                 : b.website_status === "NO_WEBSITE"
-                ? "SİTE YOK"
+                ? "Site yok"
                 : b.website_status === "UNREACHABLE"
-                ? "ERİŞİLEMEZ"
-                : "BİLİNMİYOR"}
+                ? "Site açılmıyor"
+                : "Site durumu bilinmiyor"}
             </span>
           </div>
         </div>
@@ -86,10 +120,6 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
                 <span className="text-slate-500">Telefon:</span>
                 <span className="text-slate-950 font-bold font-mono text-sm">{b.phone || "—"}</span>
               </div>
-              <div className="flex justify-between items-center text-slate-500">
-                <span>Normalize Telefon:</span>
-                <span className="font-mono text-slate-700 font-semibold">{b.phone_normalized || "—"}</span>
-              </div>
               <div className="border-t border-slate-200/70 pt-2.5 flex justify-between items-center">
                 <span className="text-slate-500">Web Sitesi:</span>
                 {b.website ? (
@@ -97,28 +127,22 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
                     href={b.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-600 font-mono font-medium hover:underline truncate max-w-[220px]"
+                    className="text-blue-600 font-medium hover:underline truncate max-w-[220px]"
                   >
                     {b.website}
                   </a>
                 ) : (
-                  <span className="text-slate-400">—</span>
+                  <span className="text-slate-400">Yok</span>
                 )}
               </div>
-              <div className="flex justify-between items-center text-slate-500">
-                <span>Alan Adı:</span>
-                <span className="font-mono text-slate-700 font-semibold">{b.website_domain || "—"}</span>
-              </div>
-              <div className="border-t border-slate-200/70 pt-2.5 flex justify-between items-center">
-                <span className="text-slate-500">Instagram:</span>
-                {b.instagram ? (
+              {b.instagram && (
+                <div className="border-t border-slate-200/70 pt-2.5 flex justify-between items-center">
+                  <span className="text-slate-500">Instagram:</span>
                   <span className="text-pink-600 font-medium">
                     @{b.instagram_normalized || b.instagram}
                   </span>
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -129,7 +153,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
             <div className="bg-slate-50/50 border border-slate-200/80 rounded-xl p-5 space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-slate-500">Adres:</span>
-                <span className="text-slate-900 text-right max-w-[240px] truncate font-medium">
+                <span className="text-slate-900 text-right max-w-[240px] truncate font-medium" title={b.address || undefined}>
                   {b.address || "—"}
                 </span>
               </div>
@@ -147,11 +171,11 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-500">Yorum Sayısı:</span>
-                <span className="text-slate-900 font-mono font-bold">{b.review_count || 0}</span>
+                <span className="text-slate-900 font-bold">{b.review_count || 0}</span>
               </div>
               <div className="border-t border-slate-200/70 pt-2.5 flex justify-between items-center text-slate-500">
                 <span>İlk Keşif Tarihi:</span>
-                <span className="font-mono">{new Date(b.created_at).toLocaleDateString("tr-TR")}</span>
+                <span>{new Date(b.created_at).toLocaleDateString("tr-TR")}</span>
               </div>
             </div>
           </div>

@@ -69,11 +69,16 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const segmentClass = (isActive: boolean) =>
+    `px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+      isActive ? "bg-white text-slate-950 shadow-xs" : "text-slate-500 hover:text-slate-950"
+    }`;
+
   const websiteTabs = [
-    { label: "Tüm Web Durumları", value: "" },
-    { label: "Site Yok", value: "NO_WEBSITE" },
-    { label: "Site Açılmıyor", value: "UNREACHABLE" },
-    { label: "Site Var", value: "HAS_WEBSITE" },
+    { label: "Tüm siteler", value: "" },
+    { label: "Site yok", value: "NO_WEBSITE" },
+    { label: "Açılmıyor", value: "UNREACHABLE" },
+    { label: "Site var", value: "HAS_WEBSITE" },
   ];
 
   const crmTabs = [
@@ -85,10 +90,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   ];
 
   const priorityTabs = [
-    { label: "Tüm Skorlar", value: "" },
-    { label: "HOT (70–100)", value: "HOT" },
-    { label: "WARM (50–69)", value: "WARM" },
-    { label: "COLD (30–49)", value: "COLD" },
+    { label: "Tüm skorlar", value: "" },
+    { label: "HOT", value: "HOT" },
+    { label: "WARM", value: "WARM" },
+    { label: "COLD", value: "COLD" },
     { label: "Önceliksiz (LOW)", value: "LOW" },
   ];
 
@@ -151,14 +156,22 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
             {params.websiteStatus && <input type="hidden" name="websiteStatus" value={params.websiteStatus} />}
             {params.mobile && <input type="hidden" name="mobile" value={params.mobile} />}
             <div className="relative w-full">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400 text-sm">
-                🔍
-              </span>
+              <svg
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="9" r="6" />
+                <path d="m14 14 4 4" strokeLinecap="round" />
+              </svg>
               <input
                 type="text"
                 name="search"
                 defaultValue={params.search || ""}
-                placeholder="İşletme adı veya anahtar kelime ile ara..."
+                placeholder="İşletme adı ara…"
                 className="bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white w-full transition"
               />
             </div>
@@ -170,7 +183,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
             </button>
             {params.search && (
               <Link
-                href={params.priority ? `/leads?priority=${params.priority}` : "/leads"}
+                href={buildHref({ search: undefined })}
                 className="text-xs font-semibold text-slate-500 hover:text-slate-950 transition shrink-0"
               >
                 Temizle
@@ -183,34 +196,24 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
             <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
               <span className="text-[11px] font-medium text-slate-400 pl-2">Sırala:</span>
               <Link
-                href={`/leads?${new URLSearchParams({
-                  ...(params.search && { search: params.search }),
-                  ...(params.priority && { priority: params.priority }),
-                  ...(activeCrmTab !== "all" && { crmTab: activeCrmTab }),
-                  sortBy: "score",
-                }).toString()}`}
+                href={buildHref({ sortBy: undefined })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   (params.sortBy || "score") === "score"
                     ? "bg-white text-slate-950 shadow-xs"
                     : "text-slate-600 hover:text-slate-950"
                 }`}
               >
-                Skor (Yüksek)
+                Skor
               </Link>
               <Link
-                href={`/leads?${new URLSearchParams({
-                  ...(params.search && { search: params.search }),
-                  ...(params.priority && { priority: params.priority }),
-                  ...(activeCrmTab !== "all" && { crmTab: activeCrmTab }),
-                  sortBy: "newest",
-                }).toString()}`}
+                href={buildHref({ sortBy: "newest" })}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   params.sortBy === "newest"
                     ? "bg-white text-slate-950 shadow-xs"
                     : "text-slate-600 hover:text-slate-950"
                 }`}
               >
-                En Yeni
+                En yeni
               </Link>
             </div>
 
@@ -238,71 +241,50 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           })}
         </div>
 
-        {/* Priority Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-400 mr-1">Öncelik Seviyesi:</span>
-          {priorityTabs.map((tab) => {
-            const isActive = (params.priority || "") === tab.value;
-
-            return (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-0.5 bg-slate-100 p-1 rounded-xl">
+            {priorityTabs.map((tab) => (
               <Link
                 key={tab.value}
                 href={buildHref({ priority: tab.value || undefined })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  isActive
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950"
-                }`}
+                className={segmentClass((params.priority || "") === tab.value)}
               >
                 {tab.label}
               </Link>
-            );
-          })}
+            ))}
+          </div>
+          <div className="flex items-center gap-0.5 bg-slate-100 p-1 rounded-xl">
+            {websiteTabs.map((tab) => (
+              <Link
+                key={tab.value}
+                href={buildHref({ websiteStatus: tab.value || undefined })}
+                className={segmentClass((params.websiteStatus || "") === tab.value)}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+          <Link
+            href={buildHref({ mobile: params.mobile === "1" ? undefined : "1" })}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+              params.mobile === "1"
+                ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                : "bg-white border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950"
+            }`}
+            title="Sadece cep telefonu olanlar (WhatsApp'tan ulaşılabilir, genelde sahibi açar)"
+          >
+            {params.mobile === "1" ? "✓ " : ""}Sadece cep
+          </Link>
         </div>
-      </div>
-
-      {/* Website Status & Phone Filters */}
-      <div className="flex flex-wrap items-center gap-2 -mt-2">
-        <span className="text-xs font-bold text-slate-400 mr-1">Web Durumu:</span>
-        {websiteTabs.map((tab) => {
-          const isActive = (params.websiteStatus || "") === tab.value;
-          return (
-            <Link
-              key={tab.value}
-              href={buildHref({ websiteStatus: tab.value || undefined })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                isActive
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-        <Link
-          href={buildHref({ mobile: params.mobile === "1" ? undefined : "1" })}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ml-2 ${
-            params.mobile === "1"
-              ? "bg-emerald-600 text-white shadow-xs"
-              : "bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950"
-          }`}
-          title="Sadece cep telefonu olanlar (WhatsApp'tan ulaşılabilir, genelde sahibi açar)"
-        >
-          Sadece cep
-        </Link>
       </div>
 
       {/* Leads Table */}
       <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
         {businesses.length === 0 ? (
           <div className="text-center py-20 px-4">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 mx-auto flex items-center justify-center text-2xl mb-3 shadow-2xs">
-              🏢
-            </div>
-            <h3 className="text-sm font-bold text-slate-900">Kayıt bulunamadı</h3>
+            <h3 className="text-sm font-bold text-slate-900">Bu filtrelerle işletme yok</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Seçilen filtre ve arama kriterlerine uyan bir işletme bulunmuyor.
+              Filtreleri gevşet ya da <Link href="/discover" className="text-blue-600 hover:underline">yeni keşif</Link> yap.
             </p>
           </div>
         ) : (
@@ -310,13 +292,13 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 text-slate-500 uppercase tracking-wider text-[11px] font-bold border-b border-slate-200/90">
                 <tr>
-                  <th className="px-5 py-3.5">Öncelik & Skor</th>
-                  <th className="px-5 py-3.5">CRM Durumu</th>
-                  <th className="px-5 py-3.5">İşletme Adı</th>
-                  <th className="px-5 py-3.5">İletişim & Arama</th>
-                  <th className="px-5 py-3.5">Web Varlığı</th>
-                  <th className="px-5 py-3.5">Google Puanı</th>
-                  <th className="px-5 py-3.5 text-right">Aksiyonlar</th>
+                  <th className="px-5 py-3.5">Skor</th>
+                  <th className="px-5 py-3.5">Durum</th>
+                  <th className="px-5 py-3.5">İşletme</th>
+                  <th className="px-5 py-3.5">Telefon</th>
+                  <th className="px-5 py-3.5">Web</th>
+                  <th className="px-5 py-3.5">Puan</th>
+                  <th className="px-5 py-3.5"><span className="sr-only">Aksiyonlar</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -343,7 +325,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
 
                           {b.is_excluded && (
                             <span className="text-[10px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded">
-                              🚫 Dışlandı
+                              Dışlandı
                             </span>
                           )}
 
@@ -351,12 +333,12 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                             <span
                               className={`text-[10px] px-2 py-0.5 rounded font-bold ${
                                 isFollowUpDue
-                                  ? "bg-rose-100 text-rose-800 border border-rose-200 animate-pulse"
+                                  ? "bg-rose-100 text-rose-800 border border-rose-200"
                                   : "bg-amber-100 text-amber-800 border border-amber-200"
                               }`}
                               title={new Date(b.next_follow_up_at).toLocaleString("tr-TR")}
                             >
-                              ⏰ {isFollowUpDue ? "Gecikmiş Takip!" : new Date(b.next_follow_up_at).toLocaleDateString("tr-TR")}
+                              {isFollowUpDue ? "Takip gecikti" : `Takip: ${new Date(b.next_follow_up_at).toLocaleDateString("tr-TR")}`}
                             </span>
                           )}
                         </div>
@@ -371,37 +353,24 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                           {b.name}
                         </Link>
                         <div className="text-xs text-slate-500 mt-0.5">
-                          {b.category || "Kategori Belirtilmemiş"}
-                        </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
-                          {b.city || "—"} {b.district ? `(${b.district})` : ""}
+                          {[b.category, b.district || b.city].filter(Boolean).join(" · ")}
                         </div>
                       </td>
 
                       {/* 4. Contact & Call Tracking */}
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-5 py-4 text-slate-700 whitespace-nowrap">
                         <div className="font-mono font-bold text-xs text-slate-900">
-                          {b.phone || "Telefon Yok"}
+                          {b.phone || <span className="font-sans font-normal text-slate-400">Telefon yok</span>}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              (b.contact_attempts || 0) > 0
-                                ? "bg-slate-100 text-slate-700 border border-slate-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            }`}
-                          >
-                            {(b.contact_attempts || 0) > 0
-                              ? `${b.contact_attempts} arama yapıldı`
-                              : "Hiç aranmadı"}
-                          </span>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          {(b.contact_attempts || 0) > 0 ? `${b.contact_attempts} kez arandı` : "Aranmadı"}
                         </div>
                       </td>
 
                       {/* 5. Website Status */}
                       <td className="px-5 py-4">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border whitespace-nowrap ${
                             b.website_status === "HAS_WEBSITE"
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : b.website_status === "NO_WEBSITE"
@@ -412,27 +381,27 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                           }`}
                         >
                           {b.website_status === "HAS_WEBSITE"
-                            ? "SİTE VAR"
+                            ? "Site var"
                             : b.website_status === "NO_WEBSITE"
-                            ? "SİTE YOK"
+                            ? "Site yok"
                             : b.website_status === "UNREACHABLE"
-                            ? "ERİŞİLEMEZ"
-                            : "BİLİNMİYOR"}
+                            ? "Açılmıyor"
+                            : "Bilinmiyor"}
                         </span>
                         {b.website_domain && (
-                          <div className="text-[11px] text-slate-500 mt-1 truncate max-w-[150px] font-mono">
+                          <div className="text-[11px] text-slate-500 mt-1 truncate max-w-[150px]">
                             {b.website_domain}
                           </div>
                         )}
                       </td>
 
                       {/* 6. Google Rating */}
-                      <td className="px-5 py-4 text-slate-700">
+                      <td className="px-5 py-4 text-slate-700 whitespace-nowrap">
                         {b.rating ? (
                           <div className="flex items-center gap-1.5">
                             <span className="text-amber-500 font-bold">★</span>
                             <span className="font-bold text-slate-900">{b.rating}</span>
-                            <span className="text-slate-400 text-xs font-mono">
+                            <span className="text-slate-400 text-xs">
                               ({b.review_count || 0})
                             </span>
                           </div>
@@ -448,19 +417,17 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                             <Link
                               href={`/queue?leadId=${b.id}`}
                               className="h-8 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-1.5 transition"
-                              title="Arama Sırasında Hemen Ara"
+                              title="Arama sırasında aç"
                             >
-                              <span>📞</span>
                               <span>Ara</span>
                             </Link>
                           )}
                           <Link
                             href={`/leads/${b.id}`}
                             className="h-8 px-3.5 rounded-lg border border-slate-200/90 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold inline-flex items-center gap-1 transition"
-                            title="İşletme Detay & CRM Kokpiti"
                           >
-                            <span>Kokpit</span>
-                            <span className="font-mono text-xs">→</span>
+                            <span>Detay</span>
+                            <span className="text-xs">→</span>
                           </Link>
                         </div>
                       </td>

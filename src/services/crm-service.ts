@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { CrmStatus, CallOutcome, LeadActivity, CRM_STATUS_CONFIG } from "@/types/crm";
+import { CrmStatus, CallOutcome, LeadActivity, CRM_STATUS_CONFIG, EXCLUSION_REASONS } from "@/types/crm";
 import { Business } from "@/types/business";
 import { WebsiteAudit } from "@/types/website";
 
@@ -227,13 +227,14 @@ export async function setLeadExclusion(
     return { success: false, error: error.message };
   }
 
+  const reasonLabel = EXCLUSION_REASONS.find((r) => r.value === reason)?.label || reason;
   try {
     await supabaseAdmin.from("lead_activities").insert({
       business_id: businessId,
       type: "status_change",
       outcome: isExcluded ? "excluded" : "restored",
       content: isExcluded
-        ? `İşletme aramadan dışlandı${reason ? ` (${reason})` : ""}.`
+        ? `İşletme aramadan dışlandı${reasonLabel ? ` (${reasonLabel})` : ""}.`
         : "İşletme tekrar aktif listeye alındı.",
       metadata: { is_excluded: isExcluded, reason: reason || null },
     });

@@ -13,7 +13,7 @@ const CACHE_STORAGE_KEY = "lead_finder_active_discovery";
 
 interface ResultFilters {
   onlyOpportunities: boolean;
-  onlyMobile: boolean;
+  onlyNoWebsite: boolean;
   hideChains: boolean;
   hideSaved: boolean;
   minReviews: number;
@@ -21,7 +21,7 @@ interface ResultFilters {
 
 const DEFAULT_FILTERS: ResultFilters = {
   onlyOpportunities: false,
-  onlyMobile: false,
+  onlyNoWebsite: false,
   hideChains: false,
   hideSaved: false,
   minReviews: 0,
@@ -29,7 +29,7 @@ const DEFAULT_FILTERS: ResultFilters = {
 
 function matchesFilters(item: DiscoveredCandidateLead, f: ResultFilters): boolean {
   if (f.onlyOpportunities && item.priority !== "HOT" && item.priority !== "WARM") return false;
-  if (f.onlyMobile && item.phone_type !== "mobile") return false;
+  if (f.onlyNoWebsite && item.website_status !== "NO_WEBSITE") return false;
   if (f.hideChains && item.chain_suspect) return false;
   if (f.hideSaved && item.already_saved) return false;
   if (item.review_count < f.minReviews) return false;
@@ -113,6 +113,18 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
 
   const availableDistricts = TURKISH_DISTRICTS[selectedCity] || [];
 
+  function syncFormTo(search: SearchRecord) {
+    setSelectedCity(search.location);
+    setSelectedDistrict(search.district || "");
+    const preset = SECTOR_PRESETS.flatMap((g) => g.presets).find((p) => p.searchTerm === search.sector);
+    if (preset) {
+      setSelectedPresetId(preset.id);
+    } else {
+      setSelectedPresetId("custom");
+      setCustomSector(search.sector);
+    }
+  }
+
   // Restore cached discovery search on mount
   useEffect(() => {
     try {
@@ -122,6 +134,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
         if (parsed?.search && Array.isArray(parsed?.items)) {
           setSearchResult(parsed);
           setSelectedLeadIds(defaultSelection(parsed.items));
+          syncFormTo(parsed.search);
         }
       }
     } catch {
@@ -184,6 +197,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
       };
       setSearchResult(loadedResult);
       setSelectedLeadIds(defaultSelection(res.items));
+      syncFormTo(res.search);
 
       try {
         localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(loadedResult));
@@ -422,58 +436,28 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 <strong className="text-emerald-700">{selectableItems.length}</strong> yeni ·{" "}
                 <strong className="text-slate-950">{searchResult.items.length - selectableItems.length}</strong> zaten listede
               </span>
-            </div>
-          </div>
-
-          {/* Action & Batch Save Bar */}
-          <div className="bg-slate-950 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <div className="text-sm font-bold text-white flex items-center gap-2.5">
-                <span>{selectedLeadIds.size} / {selectableItems.length} Yeni İşletme Seçildi</span>
-                {saveMessage && (
-                  <span className="text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2.5 py-0.5 rounded-md text-xs font-semibold">
-                    ✓ {saveMessage}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                İşaretlediğiniz işletmeler tek tıkla CRM listenize aktarılır. Listenizde olanlar tekrar eklenmez.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full md:w-auto">
               <button
                 type="button"
                 onClick={handleClearDiscovery}
-                className="text-xs font-semibold text-slate-300 hover:text-white px-4 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 transition text-center"
+                className="font-semibold text-slate-700 hover:text-slate-950 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition"
               >
-                Sonuçları Temizle
-              </button>
-              <button
-                type="button"
-                disabled={savingLeads || selectedLeadIds.size === 0}
-                onClick={handleSaveSelected}
-                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition flex items-center justify-center space-x-2"
-              >
-                {savingLeads ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    <span>Kaydediliyor ({selectedLeadIds.size})...</span>
-                  </>
-                ) : (
-                  <span>Seçilenleri CRM&apos;e Aktar ({selectedLeadIds.size}) →</span>
-                )}
+                Sonuçları temizle
               </button>
             </div>
           </div>
 
+          {saveMessage && (
+            <div className="px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              ✓ {saveMessage}
+            </div>
+          )}
+
           {/* Result Filters */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-bold text-slate-500 mr-1">Filtrele:</span>
             {(
               [
                 ["onlyOpportunities", "Sadece HOT/WARM"],
-                ["onlyMobile", "Sadece cep telefonu"],
+                ["onlyNoWebsite", "Sadece sitesi olmayanlar"],
                 ["hideChains", "Zincirleri gizle"],
                 ["hideSaved", "Listedekileri gizle"],
               ] as const
@@ -484,10 +468,11 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 onClick={() => setFilters((f) => ({ ...f, [key]: !f[key] }))}
                 className={`px-3 py-1.5 rounded-lg font-semibold border transition ${
                   filters[key]
-                    ? "bg-blue-600 text-white border-blue-600"
+                    ? "bg-blue-50 text-blue-800 border-blue-300"
                     : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                 }`}
               >
+                {filters[key] ? "✓ " : ""}
                 {label}
               </button>
             ))}
@@ -502,7 +487,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
               <option value={50}>Min. 50 yorum</option>
             </select>
             <span className="ml-auto text-slate-500">
-              Gösterilen: <strong className="text-slate-900">{visibleItems.length}</strong> / {searchResult.items.length}
+              <strong className="text-slate-900">{visibleItems.length}</strong> / {searchResult.items.length} gösteriliyor
             </span>
           </div>
 
@@ -521,12 +506,11 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                         title="Tümünü Seç / Kaldır"
                       />
                     </th>
-                    <th className="px-4 py-3.5">Durum</th>
-                    <th className="px-4 py-3.5">Öncelik & Skor</th>
-                    <th className="px-5 py-3.5">İşletme Adı & Konum</th>
-                    <th className="px-5 py-3.5">İletişim</th>
-                    <th className="px-5 py-3.5">Web Durumu & Fırsat Sinyalleri</th>
-                    <th className="px-5 py-3.5 text-right">İşlem</th>
+                    <th className="px-4 py-3.5">Skor</th>
+                    <th className="px-5 py-3.5">İşletme</th>
+                    <th className="px-5 py-3.5">Telefon</th>
+                    <th className="px-5 py-3.5">Web</th>
+                    <th className="px-5 py-3.5"><span className="sr-only">Durum</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -549,18 +533,6 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                             onChange={() => toggleItem(item.tempId)}
                             className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer disabled:opacity-30"
                           />
-                        </td>
-
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          {item.already_saved ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
-                              LİSTEDE
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
-                              YENİ ADAY
-                            </span>
-                          )}
                         </td>
 
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -587,7 +559,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                                 className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700"
                                 title="Aynı isim sonuçlarda birden fazla geçiyor veya 0850/444 hattı kullanıyor"
                               >
-                                ZİNCİR?
+                                Zincir?
                               </span>
                             )}
                           </div>
@@ -596,7 +568,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                           </div>
                           {(item.rating || item.review_count > 0) && (
                             <div className="text-xs text-amber-600 font-semibold mt-1">
-                              ⭐ {item.rating || 0} <span className="text-slate-400 font-normal">({item.review_count} Yorum)</span>
+                              ★ {item.rating || 0} <span className="text-slate-400 font-normal">({item.review_count})</span>
                             </div>
                           )}
                         </td>
@@ -627,7 +599,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                           <div className="space-y-1.5">
                             <div className="flex items-center gap-2">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border whitespace-nowrap ${
                                   item.website_status === "HAS_WEBSITE"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : item.website_status === "NO_WEBSITE"
@@ -636,10 +608,10 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                                 }`}
                               >
                                 {item.website_status === "HAS_WEBSITE"
-                                  ? "SİTE VAR"
+                                  ? "Site var"
                                   : item.website_status === "NO_WEBSITE"
-                                  ? "SİTE YOK (FIRSAT)"
-                                  : "ERİŞİLEMEZ"}
+                                  ? "Site yok"
+                                  : "Açılmıyor"}
                               </span>
                               {item.website && (
                                 <a
@@ -647,7 +619,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                                   target="_blank"
                                   rel="noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-xs font-mono text-blue-600 hover:underline truncate max-w-[160px]"
+                                  className="text-xs text-blue-600 hover:underline truncate max-w-[160px]"
                                 >
                                   {item.website.replace(/^https?:\/\/(www\.)?/, "")}
                                 </a>
@@ -670,16 +642,17 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                         </td>
 
                         <td className="px-5 py-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          {item.already_saved && item.existing_business_id ? (
-                            <Link
-                              href={`/leads/${item.existing_business_id}`}
-                              className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
-                            >
-                              İncele →
-                            </Link>
-                          ) : (
-                            <span className="text-slate-400 text-xs italic">Kaydedilmedi</span>
-                          )}
+                          {item.already_saved &&
+                            (item.existing_business_id ? (
+                              <Link
+                                href={`/leads/${item.existing_business_id}`}
+                                className="text-xs font-semibold text-slate-500 hover:text-blue-600"
+                              >
+                                Listede →
+                              </Link>
+                            ) : (
+                              <span className="text-xs text-slate-400">Listede</span>
+                            ))}
                         </td>
                       </tr>
                     );
@@ -688,6 +661,39 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
               </table>
             </div>
           </div>
+
+          {selectedLeadIds.size > 0 && (
+            <div className="sticky bottom-4 z-20 bg-slate-950 text-white rounded-2xl px-5 py-3.5 shadow-lg flex items-center justify-between gap-4">
+              <span className="text-sm font-semibold">
+                {selectedLeadIds.size} işletme seçildi
+                <span className="hidden sm:inline text-slate-400 font-normal"> / {selectableItems.length} yeni</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLeadIds(new Set())}
+                  className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-2 transition"
+                >
+                  Seçimi kaldır
+                </button>
+                <button
+                  type="button"
+                  disabled={savingLeads}
+                  onClick={handleSaveSelected}
+                  className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-40 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition flex items-center gap-2"
+                >
+                  {savingLeads ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Kaydediliyor…</span>
+                    </>
+                  ) : (
+                    <span>Listeye ekle →</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

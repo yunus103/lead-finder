@@ -15,11 +15,15 @@ interface LeadsPageProps {
     crmTab?: string;
     sortBy?: "score" | "newest";
     mobile?: string;
+    page?: string;
   }>;
 }
 
+const PAGE_SIZE = 50;
+
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const params = await searchParams;
+  const page = Math.max(1, Number(params.page) || 1);
   let businesses: Awaited<ReturnType<typeof getBusinesses>>["businesses"] = [];
   let total = 0;
   let loadError: string | null = null;
@@ -43,6 +47,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           ? "OPPORTUNITY"
           : undefined,
       followUpDue: activeCrmTab === "follow_ups" ? true : undefined,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
     });
     businesses = res.businesses;
     total = res.total;
@@ -51,14 +57,17 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   }
 
   // Builds a /leads URL that keeps every active filter except the ones being changed.
+  // Page resets to 1 unless explicitly overridden, since a filter change shrinks the result set.
   const buildHref = (overrides: Partial<Record<keyof typeof params, string | undefined>>) => {
-    const merged: Record<string, string | undefined> = { ...params, ...overrides };
+    const merged: Record<string, string | undefined> = { ...params, page: undefined, ...overrides };
     const qs = new URLSearchParams();
     for (const [key, value] of Object.entries(merged)) {
       if (value) qs.set(key, value);
     }
     return `/leads${qs.toString() ? `?${qs.toString()}` : ""}`;
   };
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const websiteTabs = [
     { label: "Tüm Web Durumları", value: "" },
@@ -68,18 +77,18 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   ];
 
   const crmTabs = [
-    { label: "📋 Tüm Aktifler", value: "all" },
-    { label: "📞 Aranacaklar", value: "to_call" },
-    { label: "⏰ Geri Aranacaklar", value: "follow_ups" },
-    { label: "🔥 Sıcak Fırsatlar", value: "opportunities" },
-    { label: "🚫 Dışlananlar", value: "excluded" },
+    { label: "Tüm aktifler", value: "all" },
+    { label: "Aranacaklar", value: "to_call" },
+    { label: "Geri aranacaklar", value: "follow_ups" },
+    { label: "Sıcak fırsatlar", value: "opportunities" },
+    { label: "Dışlananlar", value: "excluded" },
   ];
 
   const priorityTabs = [
     { label: "Tüm Skorlar", value: "" },
-    { label: "🔥 HOT (70–100)", value: "HOT" },
-    { label: "⚡ WARM (50–69)", value: "WARM" },
-    { label: "❄️ COLD (30–49)", value: "COLD" },
+    { label: "HOT (70–100)", value: "HOT" },
+    { label: "WARM (50–69)", value: "WARM" },
+    { label: "COLD (30–49)", value: "COLD" },
     { label: "Önceliksiz (LOW)", value: "LOW" },
   ];
 
@@ -88,7 +97,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       case "HOT":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-rose-100 text-rose-800 border border-rose-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
             HOT {score}
           </span>
         );
@@ -116,24 +125,12 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Yaytech CRM Havuzu
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
-            İşletmeler ve Aday Havuzu
-          </h1>
-          <p className="text-sm text-slate-600 mt-1 max-w-xl">
-            Tüm kaynaklardan toplanan, web sitesi durumuna ve ticari potansiyeline göre puanlanan kayıtlar.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <NewLeadDialog />
-        </div>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-xl font-bold text-slate-950 tracking-tight">
+          İşletmeler <span className="text-slate-400 font-medium">{total}</span>
+        </h1>
+        <NewLeadDialog />
       </div>
 
       {loadError && (
@@ -217,9 +214,6 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
               </Link>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl font-mono text-xs">
-              Toplam <span className="font-bold text-slate-950">{total}</span> Kayıt
-            </div>
           </div>
         </div>
 
@@ -295,7 +289,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
           }`}
           title="Sadece cep telefonu olanlar (WhatsApp'tan ulaşılabilir, genelde sahibi açar)"
         >
-          📱 Sadece Cep
+          Sadece cep
         </Link>
       </div>
 
@@ -475,6 +469,34 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 mt-6 text-xs font-semibold">
+            {page > 1 ? (
+              <Link
+                href={buildHref({ page: page - 1 > 1 ? String(page - 1) : undefined })}
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950 transition"
+              >
+                ← Önceki
+              </Link>
+            ) : (
+              <span className="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-300">← Önceki</span>
+            )}
+            <span className="font-mono text-slate-600">
+              Sayfa {page} / {totalPages}
+            </span>
+            {page < totalPages ? (
+              <Link
+                href={buildHref({ page: String(page + 1) })}
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-950 transition"
+              >
+                Sonraki →
+              </Link>
+            ) : (
+              <span className="px-3 py-1.5 rounded-lg border border-slate-100 text-slate-300">Sonraki →</span>
+            )}
           </div>
         )}
       </div>

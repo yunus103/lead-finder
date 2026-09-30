@@ -27,10 +27,6 @@ export function Navbar() {
               priority
               className="h-6 sm:h-9 w-auto object-contain"
             />
-            <span className="h-4 w-px bg-slate-300 hidden md:block"></span>
-            <span className="text-xs uppercase tracking-widest font-mono text-slate-500 font-semibold hidden md:inline">
-              Lead Intelligence
-            </span>
           </Link>
 
           {/* Clean Desktop/Mobile Navigation Tabs with Bottom Border Indicator */}
@@ -59,18 +55,13 @@ export function Navbar() {
 
         {/* Right: Primary Call Action */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 font-mono pr-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>V1.0</span>
-          </div>
-
           <Link
             href="/queue"
             className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition shadow-xs shrink-0"
           >
             <span className="hidden sm:inline">Arama Sırası</span>
-            <span className="sm:hidden font-bold">Kokpit</span>
-            <span className="font-mono text-xs opacity-90">→</span>
+            <span className="sm:hidden font-bold">Sıra</span>
+            <span className="text-xs opacity-90">→</span>
           </Link>
         </div>
       </div>

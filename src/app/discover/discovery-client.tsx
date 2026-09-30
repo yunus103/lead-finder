@@ -291,23 +291,12 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
     <div className="space-y-8">
       {/* Discovery Query Form */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="border-b border-slate-100 pb-5 mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-              ● Harita & Web Motoru
-            </span>
-          </div>
-          <h2 className="text-xl font-extrabold text-slate-950 tracking-tight">Yeni Keşif Başlat</h2>
-          <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
-            Konum ve sektör seçerek işletmeleri bulun, anında skorlayın ve sadece istediğiniz işletmeleri listenize kaydedin.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <input type="hidden" name="source_maps" value="on" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-2">
-                Şehir / İl *
+                Şehir
               </label>
               <select
                 name="location"
@@ -326,7 +315,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
 
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-2">
-                İlçe (İsteğe bağlı)
+                İlçe
               </label>
               <select
                 name="district"
@@ -334,7 +323,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 onChange={(e) => setSelectedDistrict(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
               >
-                <option value="">Tümü / Belirtilmemiş</option>
+                <option value="">Tüm şehir</option>
                 {availableDistricts.map((dist) => (
                   <option key={dist} value={dist}>
                     {dist}
@@ -345,7 +334,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
 
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-2">
-                Sektör / Kategori *
+                Sektör
               </label>
               <select
                 value={selectedPresetId}
@@ -376,35 +365,19 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                 />
               )}
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-800 mb-2">
-                Aktif Keşif Kaynağı
-              </label>
-              <input type="hidden" name="source_maps" value="on" />
-              <div className="flex items-center space-x-2.5 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-xs text-slate-800">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-bold text-slate-900">Google Haritalar & Yerel Ağ</span>
-                <span className="text-[10px] font-mono text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded ml-auto">
-                  Canlı API
-                </span>
-              </div>
-            </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-800 mb-2">
-                Hedef İşletme Sayısı (Google Maps Sayfalama)
+                Sonuç sayısı
               </label>
               <select
                 name="limit"
                 defaultValue="20"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white transition cursor-pointer"
               >
-                <option value="20">20 İşletme (Hızlı / 1 Sayfa)</option>
-                <option value="40">40 İşletme (2 Sayfa)</option>
-                <option value="60">60 İşletme (Maksimum / 3 Sayfa)</option>
+                <option value="20">20 (hızlı)</option>
+                <option value="40">40</option>
+                <option value="60">60 (en fazla)</option>
               </select>
             </div>
           </div>
@@ -424,10 +397,10 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
               {loading ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  <span>Haritalar Taranıyor ve Skorlanıyor...</span>
+                  <span>Taranıyor…</span>
                 </>
               ) : (
-                <span>Keşfi Başlat →</span>
+                <span>Keşfet →</span>
               )}
             </button>
           </div>
@@ -439,22 +412,15 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-mono">
-                ✓ Keşif Tamamlandı (Önizleme Havuzu)
-              </span>
-              <h3 className="text-xl font-extrabold text-slate-950 mt-1.5 tracking-tight">
+              <h3 className="text-lg font-bold text-slate-950 tracking-tight">
                 {searchResult.search.location} {searchResult.search.district ? `(${searchResult.search.district})` : ""} — {searchResult.search.sector}
               </h3>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-xl font-mono text-slate-700">
-                Bulunan: <strong className="text-slate-950 font-bold">{searchResult.items.length}</strong>
-              </span>
-              <span className="bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-xl font-mono text-emerald-800">
-                Yeni Aday: <strong className="font-bold">{selectableItems.length}</strong>
-              </span>
-              <span className="bg-slate-100 border border-slate-200/80 px-3.5 py-1.5 rounded-xl font-mono text-slate-700">
-                Listede: <strong className="font-bold">{searchResult.items.length - selectableItems.length}</strong>
+              <span className="text-slate-500">
+                <strong className="text-slate-950">{searchResult.items.length}</strong> bulundu ·{" "}
+                <strong className="text-emerald-700">{selectableItems.length}</strong> yeni ·{" "}
+                <strong className="text-slate-950">{searchResult.items.length - selectableItems.length}</strong> zaten listede
               </span>
             </div>
           </div>
@@ -535,7 +501,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
               <option value={20}>Min. 20 yorum</option>
               <option value={50}>Min. 50 yorum</option>
             </select>
-            <span className="ml-auto font-mono text-slate-500">
+            <span className="ml-auto text-slate-500">
               Gösterilen: <strong className="text-slate-900">{visibleItems.length}</strong> / {searchResult.items.length}
             </span>
           </div>
@@ -732,7 +698,6 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
             <h3 className="text-base font-bold text-slate-950 tracking-tight">
               Son Keşif Geçmişi ({history.length})
             </h3>
-            <span className="text-xs font-mono text-slate-400">Arşiv</span>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -747,7 +712,7 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-slate-600 font-mono text-xs">
+                  <span className="text-slate-600 text-xs">
                     <strong>{s.unique_count}</strong> bulunan (<strong>{s.new_count}</strong> yeni, <strong>{s.existing_count}</strong> listede)
                   </span>
                   <button
@@ -759,13 +724,13 @@ export function DiscoveryClient({ initialHistory }: DiscoveryClientProps) {
                     {loadingSearchId === s.id ? "Yükleniyor..." : "Sonuçları Göster"}
                   </button>
                   <span
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border font-mono ${
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                       s.status === "completed"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-amber-50 text-amber-700 border-amber-200"
                     }`}
                   >
-                    {s.status === "completed" ? "TAMAMLANDI" : s.status}
+                    {s.status === "completed" ? "Tamamlandı" : s.status}
                   </span>
                 </div>
               </div>

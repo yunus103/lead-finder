@@ -50,51 +50,25 @@ export default async function HomePage() {
   }).format(new Date());
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* 1. Header & Primary Daily CTA */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-                Canlı Satış Paneli
-              </span>
-              <span className="text-xs font-mono text-slate-500 capitalize">
-                {todayFormatted}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
-              Günlük Satış & Arama Komutası
-            </h1>
-
-            <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-              Bugün havuzda aranmayı bekleyen <strong className="text-slate-900 font-semibold">{pipeline.toCall}</strong> aday ve zamanı gelen{" "}
-              <strong className="text-slate-900 font-semibold">{pipeline.dueFollowUpsCount}</strong> takip araması var.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 shrink-0 w-full lg:w-auto">
-            <Link
-              href="/queue"
-              className="inline-flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-sm transition hover:shadow-md w-full sm:w-auto"
-            >
-              <span>📞 Arama Sırası</span>
-              <span className="px-2 py-0.5 rounded-md bg-blue-700 text-xs font-mono font-extrabold tracking-wide">
-                {pipeline.toCall} Aday
-              </span>
-              <span className="font-mono text-sm">→</span>
-            </Link>
-
-            <Link
-              href="/discover"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-sm w-full sm:w-auto"
-            >
-              <span>🔍 Yeni Keşfet</span>
-            </Link>
-          </div>
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <p className="text-xs text-slate-500 capitalize">{todayFormatted}</p>
+          <h1 className="text-xl font-bold text-slate-950 tracking-tight mt-0.5">
+            Bugün <strong className="text-blue-600">{pipeline.toCall}</strong> aday aranmayı bekliyor
+            {pipeline.dueFollowUpsCount > 0 && (
+              <>
+                , <strong className="text-amber-600">{pipeline.dueFollowUpsCount}</strong> geri arama zamanı geldi
+              </>
+            )}
+          </h1>
         </div>
+        <Link
+          href="/discover"
+          className="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-slate-200 bg-white hover:border-slate-300 text-slate-800 font-semibold text-sm transition shrink-0"
+        >
+          Yeni keşif
+        </Link>
       </div>
 
       {/* 2. Urgent Due Follow-ups Banner */}
@@ -175,14 +149,12 @@ export default async function HomePage() {
       {/* 3. Pipeline Metrics Bar (4 Spacious Core Metric Cards + Elegant Summary Strip) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            Satış Boru Hattı & Havuz Durumu
-          </h2>
+          <h2 className="text-sm font-semibold text-slate-700">Süreç</h2>
           <Link
             href="/leads"
             className="text-xs font-bold text-blue-600 hover:text-blue-700"
           >
-            Adaylar Tablosu →
+            Tüm işletmeler →
           </Link>
         </div>
 
@@ -195,13 +167,15 @@ export default async function HomePage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 group-hover:text-blue-600 transition">
-                📞 Aranacaklar
+                Aranacaklar
               </span>
-              <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-md">
-                {pipeline.hotUntouchedCount} HOT Aday
-              </span>
+              {pipeline.hotUntouchedCount > 0 && (
+                <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2 py-0.5 rounded-md">
+                  {pipeline.hotUntouchedCount} HOT
+                </span>
+              )}
             </div>
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-slate-950 tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight">
               {pipeline.toCall}
             </div>
             <div className="text-xs font-medium text-slate-500">
@@ -216,13 +190,15 @@ export default async function HomePage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 group-hover:text-amber-600 transition">
-                ⏰ Geri Aramalar
+                Geri aramalar
               </span>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
-                {pipeline.dueFollowUpsCount} Zamanı Geldi
-              </span>
+              {pipeline.dueFollowUpsCount > 0 && (
+                <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
+                  {pipeline.dueFollowUpsCount} zamanı geldi
+                </span>
+              )}
             </div>
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-slate-950 tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight">
               {pipeline.followUps}
             </div>
             <div className="text-xs font-medium text-slate-500">
@@ -237,13 +213,10 @@ export default async function HomePage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 group-hover:text-purple-600 transition">
-                🔥 Sıcak Fırsatlar
-              </span>
-              <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md">
-                Aktif Süreç
+                Sıcak fırsatlar
               </span>
             </div>
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-slate-950 tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold text-slate-950 tracking-tight">
               {pipeline.opportunities}
             </div>
             <div className="text-xs font-medium text-slate-500">
@@ -258,13 +231,10 @@ export default async function HomePage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 group-hover:text-emerald-600 transition">
-                🤝 Kazanılan (Won)
-              </span>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                Başarılı Satış
+                Kazanılan
               </span>
             </div>
-            <div className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-600 tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold text-emerald-600 tracking-tight">
               {pipeline.won}
             </div>
             <div className="text-xs font-medium text-slate-500">
@@ -278,22 +248,22 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-slate-600">
             <div>
               <span className="text-slate-400">Toplam Havuz: </span>
-              <span className="font-mono font-bold text-slate-950">{pipeline.total}</span>
+              <span className="font-bold text-slate-950">{pipeline.total}</span>
             </div>
             <div className="h-3 w-px bg-slate-200 hidden sm:block" />
             <div>
               <span className="text-slate-400">İletişim Kuruldu: </span>
-              <span className="font-mono font-bold text-slate-800">{pipeline.contacted}</span>
+              <span className="font-bold text-slate-800">{pipeline.contacted}</span>
             </div>
             <div className="h-3 w-px bg-slate-200 hidden sm:block" />
             <div>
               <span className="text-slate-400">Reddedilen: </span>
-              <span className="font-mono font-bold text-slate-800">{pipeline.lost}</span>
+              <span className="font-bold text-slate-800">{pipeline.lost}</span>
             </div>
             <div className="h-3 w-px bg-slate-200 hidden sm:block" />
             <div>
               <span className="text-slate-400">Dışlanan / Uygunsuz: </span>
-              <span className="font-mono font-bold text-slate-800">{pipeline.excluded}</span>
+              <span className="font-bold text-slate-800">{pipeline.excluded}</span>
             </div>
           </div>
 
@@ -314,7 +284,7 @@ export default async function HomePage() {
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-950 tracking-tight">
-                  🔥 Aranmaya Hazır HOT Adaylar
+                  Aranmaya hazır HOT adaylar
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Web sitesi fırsatı yüksek ve henüz aranmamış öncelikli adaylar
@@ -385,13 +355,12 @@ export default async function HomePage() {
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
               <div>
                 <h2 className="text-base font-bold text-slate-950 tracking-tight">
-                  ⚡ Son Arama & İletişim Hareketleri
+                  Son hareketler
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Yapılan son aramalar, sonuçlar ve kaydedilen notlar
                 </p>
               </div>
-              <span className="text-xs font-mono font-medium text-slate-400">Canlı Akış</span>
             </div>
 
             {recentActivities.length === 0 ? (
@@ -438,7 +407,7 @@ export default async function HomePage() {
                               ? "📞 Arama"
                               : "📝 İşlem"}
                           </span>
-                          <span className="text-xs text-slate-400 font-mono">
+                          <span className="text-xs text-slate-400">
                             {formatTimeAgo(act.created_at)}
                           </span>
                         </div>
@@ -472,58 +441,12 @@ export default async function HomePage() {
           </div>
 
           <div className="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="inline-flex items-center gap-1.5 font-medium">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Sistem: Aktif
-            </span>
-            <Link href="/discover" className="font-bold text-slate-700 hover:text-slate-950">
+            <Link href="/discover" className="ml-auto font-bold text-slate-700 hover:text-slate-950">
               Keşif & Tarama Geçmişi →
             </Link>
           </div>
         </section>
       </div>
-
-      {/* 5. Quick Workflow Launch Footer */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-        <Link
-          href="/discover"
-          className="border border-slate-200/90 bg-white hover:border-slate-300 p-6 rounded-2xl shadow-xs transition group"
-        >
-          <div className="text-2xl mb-3">🔍</div>
-          <div className="font-bold text-sm text-slate-950 group-hover:text-blue-600 transition">
-            Yeni Müşteri Keşfet
-          </div>
-          <div className="text-xs text-slate-500 mt-1 leading-relaxed">
-            Google Haritalar üzerinden lokasyon ve sektöre göre yeni işletmeleri tara ve puanla.
-          </div>
-        </Link>
-
-        <Link
-          href="/queue"
-          className="border border-slate-200/90 bg-white hover:border-slate-300 p-6 rounded-2xl shadow-xs transition group"
-        >
-          <div className="text-2xl mb-3">⚡</div>
-          <div className="font-bold text-sm text-slate-950 group-hover:text-blue-600 transition">
-            Arama Sırası (Power Hour)
-          </div>
-          <div className="text-xs text-slate-500 mt-1 leading-relaxed">
-            Sıfır kaydırma ekranında hazır satış açılışı ile tek tıkla ara ve sonraki adaya geç.
-          </div>
-        </Link>
-
-        <Link
-          href="/leads"
-          className="border border-slate-200/90 bg-white hover:border-slate-300 p-6 rounded-2xl shadow-xs transition group"
-        >
-          <div className="text-2xl mb-3">📋</div>
-          <div className="font-bold text-sm text-slate-950 group-hover:text-blue-600 transition">
-            Aday Havuzunu Yönet
-          </div>
-          <div className="text-xs text-slate-500 mt-1 leading-relaxed">
-            Filtreler, durum sekmeleri, dışlama yönetimi ve detaylı web sitesi denetimleri.
-          </div>
-        </Link>
-      </section>
     </main>
   );
 }

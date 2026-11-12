@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Yaytech Lead Intelligence",
   description: "Internal lead discovery and sales cockpit for Yaytech Studio",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 export function Navbar() {
   const pathname = usePathname();
+  if (pathname === "/login") return null;
 
   const navLinks = [
     { href: "/", label: "Panel" },

@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE, sessionToken } from "@/lib/session";
 
-// Whole app is private. Fails closed: if the env vars are missing, nobody gets in.
-export function middleware(req: NextRequest) {
-  const user = process.env.BASIC_AUTH_USER;
-  const pass = process.env.BASIC_AUTH_PASSWORD;
-  const header = req.headers.get("authorization");
+// Hashed once per instance; each request is then a single string comparison.
+// Fails closed: without APP_PASSWORD nobody gets in.
+const password = process.env.APP_PASSWORD;
+const expected = password ? sessionToken(password) : null;
 
-  if (user && pass && header?.startsWith("Basic ")) {
-    const [u, ...rest] = atob(header.slice(6)).split(":");
-    if (u === user && rest.join(":") === pass) return NextResponse.next();
+export async function middleware(req: NextRequest) {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  if (expected && token === (await expected)) return NextResponse.next();
+
+  if (req.method === "GET") {
+    const url = new URL("/login", req.url);
+    url.searchParams.set("next", req.nextUrl.pathname + req.nextUrl.search);
+    return NextResponse.redirect(url);
   }
-
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="lead-finder", charset="UTF-8"' },
-  });
+  return new NextResponse(null, { status: 401 });
 }
 
 export const config = {
   // demo-view is pinged by public demo sites; demos has its own bearer token.
-  matcher: ["/((?!api/demo-view|api/demos|_next/static|_next/image|favicon.ico).*)"],
+  // Static files are skipped so they never cost a middleware invocation.
+  matcher: [
+    "/((?!login|api/demo-view|api/demos|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|webp|ico|txt|xml)$).*)",
+  ],
 };
